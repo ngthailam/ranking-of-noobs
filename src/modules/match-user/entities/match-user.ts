@@ -11,6 +11,12 @@ export const MATCH_USER_TBL_KEYS = {
 
 @Entity({ name: MATCH_USER_TBL_KEYS.tblName })
 export class MatchUser {
+
+  constructor(matchId?: string, userId?: string) {
+    this.matchId = matchId;
+    this.userId = userId;
+  }
+
   @PrimaryGeneratedColumn('uuid', { name: MATCH_USER_TBL_KEYS.id })
   id: string;
 

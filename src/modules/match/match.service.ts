@@ -1,6 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CreateMatchHistoryDto } from '../match-history/dto/create-match-history.dto';
+import { MatchHistoryService } from '../match-history/match-history.service';
 import { MatchUser } from '../match-user/entities/match-user';
 import { MatchUserService } from '../match-user/match-user.service';
 import { User } from '../user/entities/user.entity';
@@ -17,10 +19,14 @@ export class MatchService {
     private readonly matchRepo: Repository<Match>,
     private readonly userService: UserService,
     private readonly matchUserService: MatchUserService,
+    private readonly matchHistoryService: MatchHistoryService,
   ) {}
 
+  findOne(id: string) {
+    return this.matchRepo.findOne({ where: { id: id } });
+  }
+
   async createMatch(createMatchDto: CreateMatchDto) {
-    console.log('Creating a new match');
     const primaryUser = await this.userService.findOne(createMatchDto.userId);
     const existinMatch = await this.matchUserService.findOneByUserId(
       primaryUser.id,
@@ -36,18 +42,20 @@ export class MatchService {
     const match = new Match();
     const createdMatch = await this.matchRepo.save(match);
 
-    // Find a random opponent
-    const secondaryUser = new User();
-    secondaryUser.id = createMatchDto.opponentId;
+    // Find a random opponent if an opponent is not specified
+    let secondaryUser = new User();
+    if (createMatchDto.opponentId) {
+      secondaryUser.id = createMatchDto.opponentId;
+    } else {
+      secondaryUser = await this.userService.findRandom(primaryUser.id);
+    }
 
     // Create match-user
-    const matchUserPrimary = new MatchUser();
-    matchUserPrimary.userId = primaryUser.id;
-    matchUserPrimary.matchId = createdMatch.id;
-
-    const matchUserSecondary = new MatchUser();
-    matchUserSecondary.userId = secondaryUser.id;
-    matchUserSecondary.matchId = createdMatch.id;
+    const matchUserPrimary = new MatchUser(createdMatch.id, primaryUser.id);
+    const matchUserSecondary = new MatchUser(
+      createdMatch.id,
+      matchUserPrimary.id,
+    );
 
     this.matchUserService.create(matchUserPrimary);
     this.matchUserService.create(matchUserSecondary);
@@ -59,13 +67,9 @@ export class MatchService {
     const matchUser: MatchUser[] = await this.matchUserService.findAllByMatchId(
       matchResultDto.matchId,
     );
-
+    // TODO: needs to refactor this, to ugly
     let primaryUserId: string;
     let secondaryUserId: string;
-
-    const primaryUserIndex = matchUser.findIndex((element) => {
-      element.userId == matchResultDto.primaryUserId;
-    });
 
     matchUser.forEach((element) => {
       if (element.userId == matchResultDto.primaryUserId) {
@@ -75,12 +79,8 @@ export class MatchService {
       }
     });
 
-    const primaryUser = await this.userService.findOne(
-      matchResultDto.primaryUserId,
-    );
-    const secondaryUser = await this.userService.findOne(
-      (matchUser[1] as MatchUser).userId,
-    );
+    const primaryUser = await this.userService.findOne(primaryUserId);
+    const secondaryUser = await this.userService.findOne(secondaryUserId);
 
     // Resolves ELO where
     const resolvedMatchResult = MatchResult[matchResultDto.result];
@@ -93,7 +93,9 @@ export class MatchService {
     this.userService.updateElo(primaryUser, elo);
     this.userService.updateElo(secondaryUser, -elo);
 
-    // TODO: Set to match history
+    // Set match history
+    const match = await this.findOne(matchResultDto.matchId);
+    this.matchHistoryService.create(CreateMatchHistoryDto.from(match));
 
     // Delete match in temp
     this.matchRepo.delete({ id: matchResultDto.matchId });

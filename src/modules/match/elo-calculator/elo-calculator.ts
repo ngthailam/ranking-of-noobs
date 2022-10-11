@@ -25,8 +25,6 @@ export class EloCalculator {
         break;
     }
 
-    console.log(`Outcome = ${gameOutcome}-${primaryMatchResult}`)
-
     const eloChange = CONSTS.kFactor * (gameOutcome - expectedScore);
 
     return Math.ceil(eloChange);

@@ -4,8 +4,10 @@ A Nest project
 An ELO system to put players in a game into ranks based on their performance
 
 ## TODO
-- CRUD player (basic)
-- ELO system
+
+[x] CRUD player (basic)
+[x] ELO system
+
 - Match making system (basic random first)
 - Ranking system
 

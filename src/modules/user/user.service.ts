@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { User, USER_TBL_KEYS } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -20,6 +20,12 @@ export class UserService {
 
   findAll() {
     return this.userRepo.find();
+  }
+
+  async findRandom(excludedId: string) {
+    return this.userRepo.query(
+      `SELECT * FROM ${USER_TBL_KEYS.tblName} WHERE ${USER_TBL_KEYS.id} != '${excludedId}' ORDER BY RANDOM() LIMIT 1`,
+    );
   }
 
   async findOne(id: string) {

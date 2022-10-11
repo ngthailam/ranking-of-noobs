@@ -5,7 +5,5 @@ export class CreateMatchDto {
   @IsNotEmpty()
   userId: string;
 
-  @IsString()
-  @IsNotEmpty()
   opponentId: string;
 }
