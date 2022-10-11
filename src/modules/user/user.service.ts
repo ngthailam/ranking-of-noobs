@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CONSTS } from 'src/core/const/constants';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -25,6 +26,17 @@ export class UserService {
   async findRandom(excludedId: string) {
     return this.userRepo.query(
       `SELECT * FROM ${USER_TBL_KEYS.tblName} WHERE ${USER_TBL_KEYS.id} != '${excludedId}' ORDER BY RANDOM() LIMIT 1`,
+    );
+  }
+
+  async findWithinEloRange(userId: string, elo: number) {
+    return this.userRepo.query(
+      `SELECT * FROM ${USER_TBL_KEYS.tblName} 
+      WHERE 
+        ${USER_TBL_KEYS.id} != '${userId}'
+        AND ${USER_TBL_KEYS.elo} > ${elo - CONSTS.findOpponentEloRange} 
+        AND ${USER_TBL_KEYS.elo} <= ${elo + CONSTS.findOpponentEloRange} 
+      ORDER BY RANDOM() LIMIT 1`,
     );
   }
 

@@ -12,6 +12,7 @@ import { MatchHistoryModule } from './modules/match-history/match-history.module
     MatchModule,
     UserModule,
     MatchUserModule,
+    MatchHistoryModule,
     TypeOrmModule.forRootAsync({
       imports: [],
       inject: [],
@@ -26,7 +27,6 @@ import { MatchHistoryModule } from './modules/match-history/match-history.module
         synchronize: true,
       }),
     }),
-    MatchHistoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

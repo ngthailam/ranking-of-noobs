@@ -42,6 +42,6 @@ export class UserController {
 
   @Get('/random/rand/:id')
   findRandom(@Param('id') id: string) {
-    return this.userService.findRandom(id);
+    return this.userService.findWithinEloRange(id, 1000);
   }
 }

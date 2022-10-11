@@ -44,18 +44,14 @@ export class MatchService {
 
     // Find a random opponent if an opponent is not specified
     let secondaryUser = new User();
-    if (createMatchDto.opponentId) {
-      secondaryUser.id = createMatchDto.opponentId;
-    } else {
-      secondaryUser = await this.userService.findRandom(primaryUser.id);
-    }
+    secondaryUser = await this.userService.findWithinEloRange(
+      primaryUser.id,
+      primaryUser.elo,
+    );
 
     // Create match-user
     const matchUserPrimary = new MatchUser(createdMatch.id, primaryUser.id);
-    const matchUserSecondary = new MatchUser(
-      createdMatch.id,
-      matchUserPrimary.id,
-    );
+    const matchUserSecondary = new MatchUser(createdMatch.id, secondaryUser.id);
 
     this.matchUserService.create(matchUserPrimary);
     this.matchUserService.create(matchUserSecondary);
@@ -73,9 +69,9 @@ export class MatchService {
 
     matchUser.forEach((element) => {
       if (element.userId == matchResultDto.primaryUserId) {
-        primaryUserId = element.id;
+        primaryUserId = element.userId;
       } else {
-        secondaryUserId == element.id;
+        secondaryUserId == element.userId;
       }
     });
 
