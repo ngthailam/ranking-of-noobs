@@ -14,6 +14,7 @@ export class UserService {
 
   create(createUserDto: CreateUserDto) {
     const user = new User();
+    user.name = createUserDto.name;
     return this.userRepo.save(user);
   }
 
@@ -21,7 +22,7 @@ export class UserService {
     return this.userRepo.find();
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const user = await this.userRepo.findOne({
       where: { id: id },
     });
@@ -36,7 +37,7 @@ export class UserService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto) {
     return this.userRepo.update(
       {
         id: id,
@@ -47,7 +48,13 @@ export class UserService {
     );
   }
 
-  remove(id: number) {
+  updateElo(user: User, eloChange: number) {
+    const clonedUser = { ...user };
+    clonedUser.elo = user.elo + eloChange;
+    return this.userRepo.save(clonedUser);
+  }
+
+  remove(id: string) {
     return this.userRepo.delete({ id: id });
   }
 }

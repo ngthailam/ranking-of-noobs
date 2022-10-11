@@ -4,11 +4,13 @@ import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
 import { MatchModule } from './modules/match/match.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MatchUserModule } from './modules/match-user/match-user.module';
 
 @Module({
   imports: [
     MatchModule,
     UserModule,
+    MatchUserModule,
     TypeOrmModule.forRootAsync({
       imports: [],
       inject: [],

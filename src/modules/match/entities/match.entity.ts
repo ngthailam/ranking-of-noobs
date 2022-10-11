@@ -5,8 +5,15 @@ export const MATCH_TBL_KEYS = {
   id: 'id',
 };
 
+export enum MatchResult {
+  NONE,
+  WIN,
+  DRAW,
+  LOSE,
+}
+
 @Entity({ name: MATCH_TBL_KEYS.tblName })
 export class Match {
   @PrimaryGeneratedColumn('uuid', { name: MATCH_TBL_KEYS.id })
-  id: number;
+  id: string;
 }

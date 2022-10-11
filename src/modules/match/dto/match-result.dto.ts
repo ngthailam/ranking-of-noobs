@@ -1,11 +1,13 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateMatchDto {
+export class MatchResultDto {
   @IsString()
   @IsNotEmpty()
-  userId: string;
+  matchId: string;
 
   @IsString()
   @IsNotEmpty()
-  opponentId: string;
+  result: string;
+
+  primaryUserId: string;
 }
