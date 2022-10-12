@@ -1,8 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CONSTS } from 'src/core/const/constants';
+import { randomInt } from 'src/core/utils/random';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserResultDto } from './dto/update-user-result.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, USER_TBL_KEYS } from './entities/user.entity';
 
@@ -28,19 +30,13 @@ export class UserService {
       `SELECT * FROM ${USER_TBL_KEYS.tblName}`,
     );
 
-    const randomIndex = this.getRandomArbitrary(0, users.length - 1);
+    const randomIndex = randomInt(0, users.length);
     const randomUser: User = users[randomIndex];
-
-    // console.log(`Randome index = ${randomIndex}`);
 
     return randomUser;
   }
 
-  getRandomArbitrary(min, max) {
-    return Math.floor(Math.random() * (max - min) + min);
-  }
-
-  async forceFindOneWithinRange(
+  async forceFindOneWithinEloRange(
     userId: string,
     userElo: number,
     eloRange: number = CONSTS.findOpponentEloRange,
@@ -54,7 +50,7 @@ export class UserService {
       return user;
     }
 
-    return this.forceFindOneWithinRange(userId, userElo, eloRange + 200);
+    return this.forceFindOneWithinEloRange(userId, userElo, eloRange + 200);
   }
 
   async findOneWithinEloRange(
@@ -88,28 +84,16 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  updateResult(id: string, updateUserDto: UpdateUserResultDto) {
     return this.userRepo.update(
       {
         id: id,
       },
       {
-        name: updateUserDto.name,
+        elo: updateUserDto.elo,
         matchCount: updateUserDto.matchCount,
       },
     );
-  }
-
-  async incrementMatchCount(id: string) {
-    const user = await this.findOne(id);
-    user.matchCount = user.matchCount + 1;
-    return this.userRepo.save(user);
-  }
-
-  updateElo(user: User, eloChange: number) {
-    const clonedUser = { ...user };
-    clonedUser.elo = user.elo + eloChange;
-    return this.userRepo.save(clonedUser);
   }
 
   remove(id: string) {

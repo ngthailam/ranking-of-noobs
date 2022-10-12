@@ -3,6 +3,8 @@ import { MatchService } from './match.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { MatchResultDto } from './dto/match-result.dto';
 import { UserService } from '../user/user.service';
+import { randomInt } from 'src/core/utils/random';
+import { MakeMoveDto } from './dto/make-move.dto';
 
 @Controller('match')
 export class MatchController {
@@ -16,16 +18,21 @@ export class MatchController {
     return this.matchService.createMatch(createMatchDto);
   }
 
-  @Post('/result')
-  setResult(@Body() matchResultDto: MatchResultDto) {
-    return this.matchService.setResult(matchResultDto);
-  }
-
   @Get()
   findAll() {
     return this.matchService.findAll();
   }
 
+  @Post('/make-move')
+  makeMove(@Body() makeMoveDto: MakeMoveDto) {
+    return this.matchService.makeMove(makeMoveDto);
+  }
+
+  /**
+   * This is only for testing
+   * @param count
+   * @returns
+   */
   @Get('create/:count')
   async simulate(@Param('count') count: string) {
     console.log('BEGIN simulate matches .....');
@@ -41,7 +48,7 @@ export class MatchController {
       matchResultDto.matchId = match.id;
       matchResultDto.primaryUserId = randomUser.id;
 
-      const randIndex = this.getRandomInt(0, 3);
+      const randIndex = randomInt(0, 3);
       matchResultDto.result = results[randIndex];
 
       console.log(
@@ -53,11 +60,5 @@ export class MatchController {
     console.log('DONE simulate matches .....');
 
     return 'DONE';
-  }
-
-  getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
   }
 }

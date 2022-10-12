@@ -5,13 +5,14 @@ import { CreateMatchHistoryDto } from '../match-history/dto/create-match-history
 import { MatchHistoryService } from '../match-history/match-history.service';
 import { MatchUser } from '../match-user/entities/match-user';
 import { MatchUserService } from '../match-user/match-user.service';
-import { UpdateUserDto } from '../user/dto/update-user.dto';
-import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { CreateMatchDto } from './dto/create-match.dto';
+import { MakeMoveDto } from './dto/make-move.dto';
 import { MatchResultDto } from './dto/match-result.dto';
-import { EloCalculator } from './elo-calculator/elo-calculator';
+import { EloCalculator } from './utils/elo-calculator';
 import { Match, MatchResult } from './entities/match.entity';
+import { MatchResultCalculator } from './utils/win-lose-calculator';
+import { UpdateUserResultDto } from '../user/dto/update-user-result.dto';
 
 @Injectable()
 export class MatchService {
@@ -41,7 +42,7 @@ export class MatchService {
 
     // Find a random opponent if an opponent is not specified
     const primaryUser = await this.userService.findOne(createMatchDto.userId);
-    const secondaryUser = await this.userService.forceFindOneWithinRange(
+    const secondaryUser = await this.userService.forceFindOneWithinEloRange(
       primaryUser.id,
       primaryUser.elo,
     );
@@ -75,6 +76,58 @@ export class MatchService {
     return createdMatch;
   }
 
+  async makeMove(makeMoveDto: MakeMoveDto) {
+    // TODO: needs to refactor this, to ugly
+    const matchUser = await this.matchUserService.findAllByMatchId(
+      makeMoveDto.matchId,
+    );
+
+    let primaryMatchUser: MatchUser;
+    let secondaryMatchUser: MatchUser;
+
+    matchUser.forEach((element) => {
+      if (element.userId == makeMoveDto.userId) {
+        primaryMatchUser = element;
+      } else {
+        secondaryMatchUser = element;
+      }
+    });
+
+    // TODO: maybe add check if user not exist in findAllByMatchId or here
+    if (primaryMatchUser.move) {
+      MatchResultCalculator.calculate(
+        makeMoveDto.move,
+        secondaryMatchUser.move,
+      );
+      throw new HttpException('Already made a move', HttpStatus.NOT_FOUND);
+    }
+
+    await this.matchUserService.makeMove(
+      makeMoveDto.userId,
+      makeMoveDto.matchId,
+      makeMoveDto.move,
+    );
+
+    // If the other user has not made a move
+    if (!secondaryMatchUser.move) {
+      return 'DONE, WAITING FOR OTHER PLAYER';
+    }
+
+    // set result for the game
+    const matchResultDto = new MatchResultDto();
+    matchResultDto.matchId = makeMoveDto.matchId;
+    matchResultDto.primaryUserId = makeMoveDto.userId;
+    matchResultDto.result =
+      MatchResult[
+        MatchResultCalculator.calculate(
+          makeMoveDto.move,
+          secondaryMatchUser.move,
+        )
+      ];
+
+    return this.setResult(matchResultDto);
+  }
+
   async setResult(matchResultDto: MatchResultDto) {
     const matchUser = await this.matchUserService.findAllByMatchId(
       matchResultDto.matchId,
@@ -100,10 +153,6 @@ export class MatchService {
     const primaryUser = users[0];
     const secondaryUser = users[1];
 
-    // console.log(
-    //   `[MatchService] setResult: incrementMatchCount for - ${primaryUser.id} - ${secondaryUser.id}`,
-    // );
-
     // Resolves ELO where
     const resolvedMatchResult = MatchResult[matchResultDto.result];
     let elo: number = EloCalculator.calculate(
@@ -120,13 +169,23 @@ export class MatchService {
     // Set match history
     this.updateMatchHistory(matchResultDto.matchId);
 
+    // Update match count
+    primaryUser.matchCount = primaryUser.matchCount + 1;
+    primaryUser.elo = primaryUser.elo + elo;
+    secondaryUser.matchCount = secondaryUser.matchCount + 1;
+    secondaryUser.elo = secondaryUser.elo - elo;
+
     await Promise.all([
       // Update elo
-      this.userService.updateElo(primaryUser, elo),
-      this.userService.updateElo(secondaryUser, -elo),
-      // Update match count
-      this.userService.incrementMatchCount(primaryUser.id),
-      this.userService.incrementMatchCount(secondaryUser.id),
+      this.userService.updateResult(
+        primaryUser.id,
+        new UpdateUserResultDto(primaryUser.matchCount, primaryUser.elo),
+      ),
+      this.userService.updateResult(
+        secondaryUser.id,
+        new UpdateUserResultDto(secondaryUser.matchCount, secondaryUser.elo),
+      ),
+
       // Delete match in temp
       this.matchRepo.delete({ id: matchResultDto.matchId }),
       this.matchUserService.deleteAllByMatchId(matchResultDto.matchId),
