@@ -6,6 +6,7 @@ import { MatchModule } from './modules/match/match.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MatchUserModule } from './modules/match-user/match-user.module';
 import { MatchHistoryModule } from './modules/match-history/match-history.module';
+import { StatsModule } from './modules/stats/stats.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MatchHistoryModule } from './modules/match-history/match-history.module
         synchronize: true,
       }),
     }),
+    StatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

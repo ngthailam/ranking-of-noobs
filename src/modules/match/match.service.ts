@@ -167,7 +167,8 @@ export class MatchService {
     }
 
     // Set match history
-    this.updateMatchHistory(matchResultDto.matchId);
+    const match = await this.findOne(matchResultDto.matchId);
+    this.matchHistoryService.create(CreateMatchHistoryDto.from(match));
 
     // Update match count
     primaryUser.matchCount = primaryUser.matchCount + 1;
@@ -192,10 +193,6 @@ export class MatchService {
     ]);
   }
 
-  private async updateMatchHistory(matchId: string) {
-    const match = await this.findOne(matchId);
-    this.matchHistoryService.create(CreateMatchHistoryDto.from(match));
-  }
 
   findAll() {
     return this.matchRepo.find();

@@ -5,7 +5,6 @@ import { randomInt } from 'src/core/utils/random';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserResultDto } from './dto/update-user-result.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { User, USER_TBL_KEYS } from './entities/user.entity';
 
 @Injectable()
@@ -14,6 +13,17 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
+
+  // TODO: make 100 const
+  getSortByElo(
+    order: 'ASC' | 'DESC' = 'DESC',
+    limit: number = CONSTS.defaultUserLimit,
+  ) {
+    return this.userRepo.query(
+      `SELECT * FROM ${USER_TBL_KEYS.tblName} 
+      ORDER BY ${USER_TBL_KEYS.elo} ${order} LIMIT ${limit}`,
+    );
+  }
 
   create(createUserDto: CreateUserDto) {
     const user = new User();
