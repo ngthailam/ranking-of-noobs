@@ -41,7 +41,19 @@ export class UserController {
   }
 
   @Get('/random/rand/:id')
-  findRandom(@Param('id') id: string) {
-    return this.userService.findWithinEloRange(id, 1000);
+  async findRandom(@Param('id') id: string) {
+    const vale = await this.userService.findOneWithinEloRange(id, 1000);
+    // console.log(JSON.stringify(vale));
+    return vale;
+  }
+
+  @Post('/create/:count')
+  async createByNum(@Param('count') count: string) {
+    for (let i = 0; i < +count; i++) {
+      const createUserDto = new CreateUserDto();
+      createUserDto.name = 'Lam ' + i;
+      await this.userService.create(createUserDto);
+    }
+    return 'DONE';
   }
 }

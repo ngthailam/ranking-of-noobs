@@ -23,21 +23,54 @@ export class UserService {
     return this.userRepo.find();
   }
 
-  async findRandom(excludedId: string) {
-    return this.userRepo.query(
-      `SELECT * FROM ${USER_TBL_KEYS.tblName} WHERE ${USER_TBL_KEYS.id} != '${excludedId}' ORDER BY RANDOM() LIMIT 1`,
+  async findRandom() {
+    const users: User[] = await this.userRepo.query(
+      `SELECT * FROM ${USER_TBL_KEYS.tblName}`,
     );
+
+    const randomIndex = this.getRandomArbitrary(0, users.length - 1);
+    const randomUser: User = users[randomIndex];
+
+    // console.log(`Randome index = ${randomIndex}`);
+
+    return randomUser;
   }
 
-  async findWithinEloRange(userId: string, elo: number) {
-    return this.userRepo.query(
+  getRandomArbitrary(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+  }
+
+  async forceFindOneWithinRange(
+    userId: string,
+    userElo: number,
+    eloRange: number = CONSTS.findOpponentEloRange,
+  ) {
+    if (eloRange > 2000) {
+      return undefined;
+    }
+
+    const user = await this.findOneWithinEloRange(userId, userElo, eloRange);
+    if (user) {
+      return user;
+    }
+
+    return this.forceFindOneWithinRange(userId, userElo, eloRange + 200);
+  }
+
+  async findOneWithinEloRange(
+    userId: string,
+    elo: number,
+    eloRange: number = CONSTS.findOpponentEloRange,
+  ) {
+    const listUsers: User[] = await this.userRepo.query(
       `SELECT * FROM ${USER_TBL_KEYS.tblName} 
       WHERE 
         ${USER_TBL_KEYS.id} != '${userId}'
-        AND ${USER_TBL_KEYS.elo} > ${elo - CONSTS.findOpponentEloRange} 
-        AND ${USER_TBL_KEYS.elo} <= ${elo + CONSTS.findOpponentEloRange} 
+        AND ${USER_TBL_KEYS.elo} > ${elo - eloRange} 
+        AND ${USER_TBL_KEYS.elo} <= ${elo + eloRange} 
       ORDER BY RANDOM() LIMIT 1`,
     );
+    return listUsers[0];
   }
 
   async findOne(id: string) {
@@ -62,8 +95,15 @@ export class UserService {
       },
       {
         name: updateUserDto.name,
+        matchCount: updateUserDto.matchCount,
       },
     );
+  }
+
+  async incrementMatchCount(id: string) {
+    const user = await this.findOne(id);
+    user.matchCount = user.matchCount + 1;
+    return this.userRepo.save(user);
   }
 
   updateElo(user: User, eloChange: number) {

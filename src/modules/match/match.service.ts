@@ -5,6 +5,7 @@ import { CreateMatchHistoryDto } from '../match-history/dto/create-match-history
 import { MatchHistoryService } from '../match-history/match-history.service';
 import { MatchUser } from '../match-user/entities/match-user';
 import { MatchUserService } from '../match-user/match-user.service';
+import { UpdateUserDto } from '../user/dto/update-user.dto';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { CreateMatchDto } from './dto/create-match.dto';
@@ -27,42 +28,58 @@ export class MatchService {
   }
 
   async createMatch(createMatchDto: CreateMatchDto) {
-    const primaryUser = await this.userService.findOne(createMatchDto.userId);
     const existinMatch = await this.matchUserService.findOneByUserId(
-      primaryUser.id,
+      createMatchDto.userId,
     );
+
     if (existinMatch != null) {
       throw new HttpException(
-        `User with id=${primaryUser.id} is already in a match`,
+        `User with id=${createMatchDto.userId} is already in a match`,
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    // Create a new match here
-    const match = new Match();
-    const createdMatch = await this.matchRepo.save(match);
-
     // Find a random opponent if an opponent is not specified
-    let secondaryUser = new User();
-    secondaryUser = await this.userService.findWithinEloRange(
+    const primaryUser = await this.userService.findOne(createMatchDto.userId);
+    const secondaryUser = await this.userService.forceFindOneWithinRange(
       primaryUser.id,
       primaryUser.elo,
     );
 
+    if (!secondaryUser || !secondaryUser.id) {
+      throw new HttpException(
+        `Cannot find an opponent for ${JSON.stringify(
+          secondaryUser,
+        )} ${JSON.stringify(primaryUser)}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     // Create match-user
+    // Create a new match here
+    const match = new Match();
+    const createdMatch = await this.matchRepo.save(match);
+
     const matchUserPrimary = new MatchUser(createdMatch.id, primaryUser.id);
     const matchUserSecondary = new MatchUser(createdMatch.id, secondaryUser.id);
 
-    this.matchUserService.create(matchUserPrimary);
-    this.matchUserService.create(matchUserSecondary);
+    await Promise.all([
+      this.matchUserService.create(matchUserPrimary),
+      this.matchUserService.create(matchUserSecondary),
+    ]);
+
+    // console.log(
+    //   `[MatchService] match_user: ${createdMatch.id} ${matchUserPrimary.userId} - ${matchUserSecondary.userId}`,
+    // );
 
     return createdMatch;
   }
 
   async setResult(matchResultDto: MatchResultDto) {
-    const matchUser: MatchUser[] = await this.matchUserService.findAllByMatchId(
+    const matchUser = await this.matchUserService.findAllByMatchId(
       matchResultDto.matchId,
     );
+
     // TODO: needs to refactor this, to ugly
     let primaryUserId: string;
     let secondaryUserId: string;
@@ -75,27 +92,50 @@ export class MatchService {
       }
     });
 
-    const primaryUser = await this.userService.findOne(primaryUserId);
-    const secondaryUser = await this.userService.findOne(secondaryUserId);
+    const users = await Promise.all([
+      this.userService.findOne(primaryUserId),
+      this.userService.findOne(secondaryUserId),
+    ]);
+
+    const primaryUser = users[0];
+    const secondaryUser = users[1];
+
+    // console.log(
+    //   `[MatchService] setResult: incrementMatchCount for - ${primaryUser.id} - ${secondaryUser.id}`,
+    // );
 
     // Resolves ELO where
     const resolvedMatchResult = MatchResult[matchResultDto.result];
-    const elo: number = EloCalculator.calculate(
+    let elo: number = EloCalculator.calculate(
       primaryUser.elo,
       secondaryUser.elo,
       resolvedMatchResult,
     );
 
-    this.userService.updateElo(primaryUser, elo);
-    this.userService.updateElo(secondaryUser, -elo);
+    // To prevent elo going down below 0
+    if (elo > secondaryUser.elo) {
+      elo = secondaryUser.elo;
+    }
 
     // Set match history
-    const match = await this.findOne(matchResultDto.matchId);
-    this.matchHistoryService.create(CreateMatchHistoryDto.from(match));
+    this.updateMatchHistory(matchResultDto.matchId);
 
-    // Delete match in temp
-    this.matchRepo.delete({ id: matchResultDto.matchId });
-    this.matchUserService.deleteAllByMatchId(matchResultDto.matchId);
+    await Promise.all([
+      // Update elo
+      this.userService.updateElo(primaryUser, elo),
+      this.userService.updateElo(secondaryUser, -elo),
+      // Update match count
+      this.userService.incrementMatchCount(primaryUser.id),
+      this.userService.incrementMatchCount(secondaryUser.id),
+      // Delete match in temp
+      this.matchRepo.delete({ id: matchResultDto.matchId }),
+      this.matchUserService.deleteAllByMatchId(matchResultDto.matchId),
+    ]);
+  }
+
+  private async updateMatchHistory(matchId: string) {
+    const match = await this.findOne(matchId);
+    this.matchHistoryService.create(CreateMatchHistoryDto.from(match));
   }
 
   findAll() {

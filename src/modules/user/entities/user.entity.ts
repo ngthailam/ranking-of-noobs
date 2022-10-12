@@ -6,7 +6,17 @@ export const USER_TBL_KEYS = {
   id: 'id',
   name: 'name',
   elo: 'elo',
+  matchCount: 'match_count',
+  rank: 'rank',
 };
+
+export enum UserRank {
+  NONE,
+  BRONZE,
+  GOLD,
+  DIAMOND,
+  CHALLENGER, // Only top 100 user
+}
 
 @Entity({ name: USER_TBL_KEYS.tblName })
 export class User {
@@ -18,4 +28,15 @@ export class User {
 
   @Column({ name: USER_TBL_KEYS.elo, default: CONSTS.baseElo })
   elo: number;
+
+  @Column({ name: USER_TBL_KEYS.matchCount, default: 0 })
+  matchCount: number;
+
+  @Column({
+    name: USER_TBL_KEYS.rank,
+    type: 'enum',
+    enum: UserRank,
+    default: UserRank.NONE,
+  })
+  rank: UserRank;
 }
