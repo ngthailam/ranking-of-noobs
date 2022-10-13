@@ -7,7 +7,7 @@ export class EloCalculator {
     secondaryElo: number,
     primaryMatchResult: MatchResult,
   ) {
-    const eloDiff = Math.abs(primaryElo - secondaryElo);
+    const eloDiff = primaryElo - secondaryElo;
     const ratioDiff = eloDiff / CONSTS.eloRange;
 
     const expectedScore = 1 / (1 + Math.pow(10, ratioDiff));
@@ -27,6 +27,11 @@ export class EloCalculator {
 
     const eloChange = CONSTS.kFactor * (gameOutcome - expectedScore);
 
-    return Math.ceil(eloChange);
+    const expectedElo = Math.ceil(eloChange);
+    if (expectedElo > secondaryElo) {
+      return secondaryElo;
+    }
+
+    return expectedElo;
   }
 }

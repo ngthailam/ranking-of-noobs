@@ -4,7 +4,6 @@ import { MatchController } from './match.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Match } from './entities/match.entity';
 import { UserModule } from '../user/user.module';
-import { MatchUserModule } from '../match-user/match-user.module';
 import { MatchHistoryModule } from '../match-history/match-history.module';
 import { StatsModule } from '../stats/stats.module';
 
@@ -12,7 +11,6 @@ import { StatsModule } from '../stats/stats.module';
   imports: [
     TypeOrmModule.forFeature([Match]),
     UserModule,
-    MatchUserModule,
     MatchHistoryModule,
     StatsModule,
   ],

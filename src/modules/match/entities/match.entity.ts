@@ -2,11 +2,17 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   CreateDateColumn,
+  Column,
 } from 'typeorm';
+import { ValidMove } from '../dto/make-move.dto';
 
 export const MATCH_TBL_KEYS = {
   tblName: 'matches',
   id: 'id',
+  primaryUserId: 'primary_user_id',
+  secondaryUserId: 'secondary_user_id',
+  primaryUserMove: 'primary_user_move',
+  secondaryUserMove: 'secondary_user_move',
   createdAt: 'created_at',
 };
 
@@ -21,6 +27,28 @@ export enum MatchResult {
 export class Match {
   @PrimaryGeneratedColumn('uuid', { name: MATCH_TBL_KEYS.id })
   id: string;
+
+  @Column({ name: MATCH_TBL_KEYS.primaryUserId })
+  primaryUserId: string;
+
+  @Column({
+    name: MATCH_TBL_KEYS.primaryUserMove,
+    type: 'enum',
+    enum: ValidMove,
+    nullable: true,
+  })
+  primaryUserMove: ValidMove;
+
+  @Column({ name: MATCH_TBL_KEYS.secondaryUserId })
+  secondaryUserId: string;
+
+  @Column({
+    name: MATCH_TBL_KEYS.secondaryUserMove,
+    type: 'enum',
+    enum: ValidMove,
+    nullable: true,
+  })
+  secondaryUserMove: ValidMove;
 
   @CreateDateColumn({
     name: MATCH_TBL_KEYS.createdAt,

@@ -19,13 +19,23 @@ export class MatchController {
   }
 
   @Get()
-  findAll() {
+  getAll() {
     return this.matchService.findAll();
   }
 
   @Post('/make-move')
   makeMove(@Body() makeMoveDto: MakeMoveDto) {
     return this.matchService.makeMove(makeMoveDto);
+  }
+
+  @Get(':id')
+  getById(@Param('id') id: string) {
+    return this.matchService.findOne(id);
+  }
+
+  @Get('/pending/:uid')
+  getByUserId(@Param('uid') uid: string) {
+    return this.matchService.findAllByUserId(uid);
   }
 
   /**
@@ -46,32 +56,21 @@ export class MatchController {
         randomPrimaryUser.id,
       );
 
-      const createMatchDto = new CreateMatchDto();
-      createMatchDto.userId = randomPrimaryUser.id;
-      createMatchDto.opponentId = randomSecondaryUser.id;
-      const match = await this.createMatch(createMatchDto);
-
       const randIndex1 = randomInt(0, 3);
       const randIndex2 = randomInt(0, 3);
-
       const primaryUserMove = moves[randIndex1];
       const secondaryUserMove = moves[randIndex2];
 
-      // Make 2 moves
-      const primaryUserMoveDto = new MakeMoveDto();
-      primaryUserMoveDto.matchId = match.id;
-      primaryUserMoveDto.userId = randomPrimaryUser.id;
-      primaryUserMoveDto.move = primaryUserMove;
-      await this.matchService.makeMove(primaryUserMoveDto);
+      const simulateFixedDto = new SimulateFixedDto();
+      simulateFixedDto.primaryUserId = randomPrimaryUser.id;
+      simulateFixedDto.secondaryUserId = randomSecondaryUser.id;
+      simulateFixedDto.primaryUserMove = primaryUserMove;
+      simulateFixedDto.secondaryUserMove = secondaryUserMove;
 
-      const secondaryUserMoveDto = new MakeMoveDto();
-      secondaryUserMoveDto.matchId = match.id;
-      secondaryUserMoveDto.userId = randomSecondaryUser.id;
-      secondaryUserMoveDto.move = secondaryUserMove;
-      await this.matchService.makeMove(secondaryUserMoveDto);
+      await this.simulateFixed(simulateFixedDto);
 
       console.log(
-        `==== COUNT= ${i} match=${match.id} - ${randomPrimaryUser.id}:${primaryUserMove} - ${randomSecondaryUser.id}:${secondaryUserMove}`,
+        `==== COUNT= ${i} - ${randomPrimaryUser.id}:${primaryUserMove} - ${randomSecondaryUser.id}:${secondaryUserMove}`,
       );
     }
     console.log('DONE simulate matches .....');
@@ -91,6 +90,8 @@ export class MatchController {
     createMatchDto.userId = fixedDto.primaryUserId;
     createMatchDto.opponentId = fixedDto.secondaryUserId;
     const match = await this.createMatch(createMatchDto);
+
+    console.log(`[Simulate] Match=${JSON.stringify(match)}`);
 
     // Make 2 moves
     const primaryUserMoveDto = new MakeMoveDto();

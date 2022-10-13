@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
 import { MatchModule } from './modules/match/match.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MatchUserModule } from './modules/match-user/match-user.module';
 import { MatchHistoryModule } from './modules/match-history/match-history.module';
 import { StatsModule } from './modules/stats/stats.module';
 
@@ -12,7 +11,6 @@ import { StatsModule } from './modules/stats/stats.module';
   imports: [
     MatchModule,
     UserModule,
-    MatchUserModule,
     MatchHistoryModule,
     StatsModule,
     TypeOrmModule.forRootAsync({

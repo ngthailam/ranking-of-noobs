@@ -1,13 +1,7 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { Match } from '../entities/match.entity';
 
 export class MatchResultDto {
-  @IsString()
-  @IsNotEmpty()
-  matchId: string;
-
-  @IsString()
-  @IsNotEmpty()
   result: string;
 
-  primaryUserId: string;
+  match: Match;
 }

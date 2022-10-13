@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm/repository/Repository';
-import { MatchUser } from '../match-user/entities/match-user';
 import { ValidMove } from '../match/dto/make-move.dto';
-import { MatchResult } from '../match/entities/match.entity';
+import { Match, MatchResult } from '../match/entities/match.entity';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { Stats } from './entities/stats.entity';
@@ -23,8 +22,8 @@ export class StatsService {
   async updateStatsOnMatchResult(
     primaryUser: User,
     secondaryUser: User,
-    matchResult: MatchResult,
-    matchUsers: MatchUser[],
+    match: Match,
+    matchResult: MatchResult
   ) {
     const primaryUserStats = await this.getCreateIfNotExist(primaryUser.id);
     const secondaryUserStats = await this.getCreateIfNotExist(secondaryUser.id);
@@ -62,47 +61,42 @@ export class StatsService {
 
     // Update paper - rock - scissors count
     // TODO: refactor this
-    matchUsers.forEach((element) => {
-      if (element.userId == primaryUser.id) {
-        switch (element.move) {
-          case ValidMove.ROCK:
-            primaryUserStats.rockCount = primaryUserStats.rockCount + 1;
-            break;
-          case ValidMove.PAPER:
-            primaryUserStats.paperCount = primaryUserStats.paperCount + 1;
-            break;
-          case ValidMove.SCISSORS:
-            primaryUserStats.scissorsCount = primaryUserStats.scissorsCount + 1;
-            break;
-        }
-      } else {
-        switch (element.move) {
-          case ValidMove.ROCK:
-            secondaryUserStats.rockCount = secondaryUserStats.rockCount + 1;
-            break;
-          case ValidMove.PAPER:
-            secondaryUserStats.paperCount = secondaryUserStats.paperCount + 1;
-            break;
-          case ValidMove.SCISSORS:
-            secondaryUserStats.scissorsCount =
-              secondaryUserStats.scissorsCount + 1;
-            break;
-        }
-      }
-    });
+    switch (match.primaryUserMove) {
+      case ValidMove.ROCK:
+        primaryUserStats.rockCount += 1;
+        break;
+      case ValidMove.PAPER:
+        primaryUserStats.paperCount += 1;
+        break;
+      case ValidMove.SCISSORS:
+        primaryUserStats.scissorsCount += 1;
+        break;
+    }
 
-    console.log(`prim = ${primaryUser.id} - ${secondaryUser.id}`);
-    console.log(
-      `Updating stats on match result prime ${JSON.stringify(
-        primaryUserStats,
-      )}`,
-    );
+    switch (match.secondaryUserMove) {
+      case ValidMove.ROCK:
+        secondaryUserStats.rockCount += 1;
+        break;
+      case ValidMove.PAPER:
+        secondaryUserStats.paperCount += 1;
+        break;
+      case ValidMove.SCISSORS:
+        secondaryUserStats.scissorsCount += 1;
+        break;
+    }
 
-    console.log(
-      `Updating stats on match result second ${JSON.stringify(
-        secondaryUserStats,
-      )}`,
-    );
+    // console.log(`prim = ${primaryUser.id} - ${secondaryUser.id}`);
+    // console.log(
+    //   `Updating stats on match result prime ${JSON.stringify(
+    //     primaryUserStats,
+    //   )}`,
+    // );
+
+    // console.log(
+    //   `Updating stats on match result second ${JSON.stringify(
+    //     secondaryUserStats,
+    //   )}`,
+    // );
 
     // Save all the data
     await Promise.all([

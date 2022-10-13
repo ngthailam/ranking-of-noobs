@@ -3,8 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMatchHistoryDto } from '../match-history/dto/create-match-history.dto';
 import { MatchHistoryService } from '../match-history/match-history.service';
-import { MatchUser } from '../match-user/entities/match-user';
-import { MatchUserService } from '../match-user/match-user.service';
 import { UserService } from '../user/user.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { MakeMoveDto } from './dto/make-move.dto';
@@ -21,27 +19,24 @@ export class MatchService {
     @InjectRepository(Match)
     private readonly matchRepo: Repository<Match>,
     private readonly userService: UserService,
-    private readonly matchUserService: MatchUserService,
     private readonly matchHistoryService: MatchHistoryService,
     private readonly statsService: StatsService,
   ) {}
 
-  findOne(id: string) {
-    return this.matchRepo.findOne({ where: { id: id } });
+  async findOne(id: string) {
+    const match = await this.matchRepo.findOne({
+      where: { id: id },
+    });
+    if (!match) {
+      throw new HttpException(
+        `Match with id = ${id} not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return match;
   }
 
   async createMatch(createMatchDto: CreateMatchDto) {
-    const existinMatch = await this.matchUserService.findOneByUserId(
-      createMatchDto.userId,
-    );
-
-    if (existinMatch != null) {
-      throw new HttpException(
-        `User with id=${createMatchDto.userId} is already in a match`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     // Find a random opponent if an opponent is not specified
     const primaryUser = await this.userService.findOne(createMatchDto.userId);
     const secondaryUser = createMatchDto.opponentId
@@ -50,10 +45,6 @@ export class MatchService {
           primaryUser.id,
           primaryUser.elo,
         );
-
-    console.log(
-      `====> ${createMatchDto.userId} - ${createMatchDto.opponentId} -   ${primaryUser.id} - ${secondaryUser.id}`,
-    );
 
     if (!secondaryUser || !secondaryUser.id) {
       throw new HttpException(
@@ -64,72 +55,52 @@ export class MatchService {
       );
     }
 
-    // Create match-user
     // Create a new match here
     const match = new Match();
+    match.primaryUserId = primaryUser.id;
+    match.secondaryUserId = secondaryUser.id;
     const createdMatch = await this.matchRepo.save(match);
 
-    const matchUserPrimary = new MatchUser(createdMatch.id, primaryUser.id);
-    const matchUserSecondary = new MatchUser(createdMatch.id, secondaryUser.id);
-
-    await Promise.all([
-      this.matchUserService.create(matchUserPrimary),
-      this.matchUserService.create(matchUserSecondary),
-    ]);
-
-    // console.log(
-    //   `[MatchService] match_user: ${createdMatch.id} ${matchUserPrimary.userId} - ${matchUserSecondary.userId}`,
-    // );
+    console.log(
+      `[MatchService] createMatch: match=${JSON.stringify(createdMatch)}`,
+    );
 
     return createdMatch;
   }
 
   async makeMove(makeMoveDto: MakeMoveDto) {
     // TODO: needs to refactor this, to ugly
-    const matchUser = await this.matchUserService.findAllByMatchId(
-      makeMoveDto.matchId,
-    );
-
-    let primaryMatchUser: MatchUser;
-    let secondaryMatchUser: MatchUser;
-
-    matchUser.forEach((element) => {
-      if (element.userId == makeMoveDto.userId) {
-        primaryMatchUser = element;
-      } else {
-        secondaryMatchUser = element;
-      }
-    });
+    const match = await this.findOne(makeMoveDto.matchId);
+    const isPrimary = makeMoveDto.userId == match.primaryUserId;
 
     // TODO: maybe add check if user not exist in findAllByMatchId or here
-    if (primaryMatchUser.move) {
-      MatchResultCalculator.calculate(
-        makeMoveDto.move,
-        secondaryMatchUser.move,
-      );
+    const hasPrimaryUserMadeMove = isPrimary && match.primaryUserMove;
+    const hasSecondaryUserMadeMove = !isPrimary && match.secondaryUserMove;
+    if (hasPrimaryUserMadeMove || hasSecondaryUserMadeMove) {
       throw new HttpException('Already made a move', HttpStatus.NOT_FOUND);
     }
 
-    await this.matchUserService.makeMove(
-      makeMoveDto.userId,
-      makeMoveDto.matchId,
-      makeMoveDto.move,
-    );
-
-    // If the other user has not made a move
-    if (!secondaryMatchUser.move) {
-      return 'DONE, WAITING FOR OTHER PLAYER';
+    // TODO: makeMove
+    if (isPrimary) {
+      match.primaryUserMove = makeMoveDto.move;
+    } else {
+      match.secondaryUserMove = makeMoveDto.move;
     }
 
-    // set result for the game
+    // TODO: check this, this is to save the user move
+    await this.matchRepo.save(match);
+    if (!match.primaryUserMove || !match.secondaryUserMove) {
+      return 'You made your move';
+    }
+
+    // Set result for the game if both users have made a move
     const matchResultDto = new MatchResultDto();
-    matchResultDto.matchId = makeMoveDto.matchId;
-    matchResultDto.primaryUserId = makeMoveDto.userId;
+    matchResultDto.match = match;
     matchResultDto.result =
       MatchResult[
         MatchResultCalculator.calculate(
-          makeMoveDto.move,
-          secondaryMatchUser.move,
+          match.primaryUserMove,
+          match.secondaryUserMove,
         )
       ];
 
@@ -137,25 +108,12 @@ export class MatchService {
   }
 
   private async setResult(matchResultDto: MatchResultDto) {
-    const matchUsers = await this.matchUserService.findAllByMatchId(
-      matchResultDto.matchId,
-    );
+    const matchResult: MatchResult = MatchResult[matchResultDto.result];
 
-    // TODO: needs to refactor this, to ugly
-    let primaryUserId: string;
-    let secondaryUserId: string;
-
-    matchUsers.forEach((element) => {
-      if (element.userId == matchResultDto.primaryUserId) {
-        primaryUserId = element.userId;
-      } else {
-        secondaryUserId = element.userId;
-      }
-    });
-
+    const match = matchResultDto.match;
     const users = await Promise.all([
-      this.userService.findOne(primaryUserId),
-      this.userService.findOne(secondaryUserId),
+      this.userService.findOne(match.primaryUserId),
+      this.userService.findOne(match.secondaryUserId),
     ]);
 
     const primaryUser = users[0];
@@ -165,21 +123,16 @@ export class MatchService {
     //   `=====> after matchusers ${primaryUserId} - ${secondaryUserId} - ${users.length} ${primaryUser.id} - ${secondaryUser.id}`,
     // );
 
-    // Resolves ELO where
-    const resolvedMatchResult: MatchResult = MatchResult[matchResultDto.result];
+    // Resolves ELO
     let elo: number = EloCalculator.calculate(
       primaryUser.elo,
       secondaryUser.elo,
-      resolvedMatchResult,
+      matchResult,
     );
 
-    // To prevent elo going down below 0
-    if (elo > secondaryUser.elo) {
-      elo = secondaryUser.elo;
-    }
+    // TODO: add prevent elo going down below 0
 
     // Set match history
-    const match = await this.findOne(matchResultDto.matchId);
     this.matchHistoryService.create(CreateMatchHistoryDto.from(match));
 
     // Update match count + elo
@@ -192,8 +145,8 @@ export class MatchService {
     this.statsService.updateStatsOnMatchResult(
       primaryUser,
       secondaryUser,
-      resolvedMatchResult,
-      matchUsers,
+      match,
+      matchResult,
     );
 
     await Promise.all([
@@ -206,13 +159,16 @@ export class MatchService {
         new UpdateUserResultDto(secondaryUser.matchCount, secondaryUser.elo),
       ),
 
-      // Delete match in temp
-      this.matchRepo.delete({ id: matchResultDto.matchId }),
-      this.matchUserService.deleteAllByMatchId(matchResultDto.matchId),
+      // TODO: should I delete this match ???????
+      this.matchRepo.delete({ id: match.id }),
     ]);
   }
 
   findAll() {
     return this.matchRepo.find();
+  }
+
+  findAllByUserId(uid: string) {
+    return this.matchRepo.find({ where: {} });
   }
 }
