@@ -13,6 +13,7 @@ import { EloCalculator } from './utils/elo-calculator';
 import { Match, MatchResult } from './entities/match.entity';
 import { MatchResultCalculator } from './utils/win-lose-calculator';
 import { UpdateUserResultDto } from '../user/dto/update-user-result.dto';
+import { StatsService } from '../stats/stats.service';
 
 @Injectable()
 export class MatchService {
@@ -22,6 +23,7 @@ export class MatchService {
     private readonly userService: UserService,
     private readonly matchUserService: MatchUserService,
     private readonly matchHistoryService: MatchHistoryService,
+    private readonly statsService: StatsService,
   ) {}
 
   findOne(id: string) {
@@ -42,9 +44,15 @@ export class MatchService {
 
     // Find a random opponent if an opponent is not specified
     const primaryUser = await this.userService.findOne(createMatchDto.userId);
-    const secondaryUser = await this.userService.forceFindOneWithinEloRange(
-      primaryUser.id,
-      primaryUser.elo,
+    const secondaryUser = createMatchDto.opponentId
+      ? await this.userService.findOne(createMatchDto.opponentId)
+      : await this.userService.forceFindOneWithinEloRange(
+          primaryUser.id,
+          primaryUser.elo,
+        );
+
+    console.log(
+      `====> ${createMatchDto.userId} - ${createMatchDto.opponentId} -   ${primaryUser.id} - ${secondaryUser.id}`,
     );
 
     if (!secondaryUser || !secondaryUser.id) {
@@ -128,8 +136,8 @@ export class MatchService {
     return this.setResult(matchResultDto);
   }
 
-  async setResult(matchResultDto: MatchResultDto) {
-    const matchUser = await this.matchUserService.findAllByMatchId(
+  private async setResult(matchResultDto: MatchResultDto) {
+    const matchUsers = await this.matchUserService.findAllByMatchId(
       matchResultDto.matchId,
     );
 
@@ -137,11 +145,11 @@ export class MatchService {
     let primaryUserId: string;
     let secondaryUserId: string;
 
-    matchUser.forEach((element) => {
+    matchUsers.forEach((element) => {
       if (element.userId == matchResultDto.primaryUserId) {
         primaryUserId = element.userId;
       } else {
-        secondaryUserId == element.userId;
+        secondaryUserId = element.userId;
       }
     });
 
@@ -153,8 +161,12 @@ export class MatchService {
     const primaryUser = users[0];
     const secondaryUser = users[1];
 
+    // console.log(
+    //   `=====> after matchusers ${primaryUserId} - ${secondaryUserId} - ${users.length} ${primaryUser.id} - ${secondaryUser.id}`,
+    // );
+
     // Resolves ELO where
-    const resolvedMatchResult = MatchResult[matchResultDto.result];
+    const resolvedMatchResult: MatchResult = MatchResult[matchResultDto.result];
     let elo: number = EloCalculator.calculate(
       primaryUser.elo,
       secondaryUser.elo,
@@ -170,14 +182,21 @@ export class MatchService {
     const match = await this.findOne(matchResultDto.matchId);
     this.matchHistoryService.create(CreateMatchHistoryDto.from(match));
 
-    // Update match count
+    // Update match count + elo
     primaryUser.matchCount = primaryUser.matchCount + 1;
     primaryUser.elo = primaryUser.elo + elo;
     secondaryUser.matchCount = secondaryUser.matchCount + 1;
     secondaryUser.elo = secondaryUser.elo - elo;
 
+    // Update stats
+    this.statsService.updateStatsOnMatchResult(
+      primaryUser,
+      secondaryUser,
+      resolvedMatchResult,
+      matchUsers,
+    );
+
     await Promise.all([
-      // Update elo
       this.userService.updateResult(
         primaryUser.id,
         new UpdateUserResultDto(primaryUser.matchCount, primaryUser.elo),
@@ -192,7 +211,6 @@ export class MatchService {
       this.matchUserService.deleteAllByMatchId(matchResultDto.matchId),
     ]);
   }
-
 
   findAll() {
     return this.matchRepo.find();

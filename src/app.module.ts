@@ -14,6 +14,7 @@ import { StatsModule } from './modules/stats/stats.module';
     UserModule,
     MatchUserModule,
     MatchHistoryModule,
+    StatsModule,
     TypeOrmModule.forRootAsync({
       imports: [],
       inject: [],
@@ -28,7 +29,6 @@ import { StatsModule } from './modules/stats/stats.module';
         synchronize: true,
       }),
     }),
-    StatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

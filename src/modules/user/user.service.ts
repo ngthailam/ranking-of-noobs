@@ -14,7 +14,6 @@ export class UserService {
     private readonly userRepo: Repository<User>,
   ) {}
 
-  // TODO: make 100 const
   getSortByElo(
     order: 'ASC' | 'DESC' = 'DESC',
     limit: number = CONSTS.defaultUserLimit,
@@ -38,6 +37,17 @@ export class UserService {
   async findRandom() {
     const users: User[] = await this.userRepo.query(
       `SELECT * FROM ${USER_TBL_KEYS.tblName}`,
+    );
+
+    const randomIndex = randomInt(0, users.length);
+    const randomUser: User = users[randomIndex];
+
+    return randomUser;
+  }
+
+  async findRandomExclude(excludedId: string) {
+    const users: User[] = await this.userRepo.query(
+      `SELECT * FROM ${USER_TBL_KEYS.tblName} WHERE ${USER_TBL_KEYS.id} != '${excludedId}'`,
     );
 
     const randomIndex = randomInt(0, users.length);
@@ -80,6 +90,13 @@ export class UserService {
   }
 
   async findOne(id: string) {
+    if (!id) {
+      throw new HttpException(
+        `user service findOne id is not valid, id=${id}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     const user = await this.userRepo.findOne({
       where: { id: id },
     });

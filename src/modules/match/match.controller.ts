@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { MatchService } from './match.service';
 import { CreateMatchDto } from './dto/create-match.dto';
-import { MatchResultDto } from './dto/match-result.dto';
 import { UserService } from '../user/user.service';
 import { randomInt } from 'src/core/utils/random';
-import { MakeMoveDto } from './dto/make-move.dto';
+import { MakeMoveDto, ValidMove } from './dto/make-move.dto';
+import { SimulateFixedDto } from './dto/simulate-fixed.dto';
 
 @Controller('match')
 export class MatchController {
@@ -36,28 +36,74 @@ export class MatchController {
   @Get('create/:count')
   async simulate(@Param('count') count: string) {
     console.log('BEGIN simulate matches .....');
-    const results = ['WIN', 'DRAW', 'LOSE'];
+    const moves = [ValidMove.ROCK, ValidMove.PAPER, ValidMove.SCISSORS];
+
+    // TODO: refactor: use this.simulateFixed instead
 
     for (let i = 0; i < +count; i++) {
-      const randomUser = await this.userService.findRandom();
-      const createMatchDto = new CreateMatchDto();
-      createMatchDto.userId = randomUser.id;
-      const match = await this.createMatch(createMatchDto);
-
-      const matchResultDto = new MatchResultDto();
-      matchResultDto.matchId = match.id;
-      matchResultDto.primaryUserId = randomUser.id;
-
-      const randIndex = randomInt(0, 3);
-      matchResultDto.result = results[randIndex];
-
-      console.log(
-        `==== COUNT= ${i} match=${match.id} - ${randomUser.id} - ${matchResultDto.matchId} - ${matchResultDto.primaryUserId} - RESULT=${matchResultDto.result}`,
+      const randomPrimaryUser = await this.userService.findRandom();
+      const randomSecondaryUser = await this.userService.findRandomExclude(
+        randomPrimaryUser.id,
       );
 
-      await this.matchService.setResult(matchResultDto);
+      const createMatchDto = new CreateMatchDto();
+      createMatchDto.userId = randomPrimaryUser.id;
+      createMatchDto.opponentId = randomSecondaryUser.id;
+      const match = await this.createMatch(createMatchDto);
+
+      const randIndex1 = randomInt(0, 3);
+      const randIndex2 = randomInt(0, 3);
+
+      const primaryUserMove = moves[randIndex1];
+      const secondaryUserMove = moves[randIndex2];
+
+      // Make 2 moves
+      const primaryUserMoveDto = new MakeMoveDto();
+      primaryUserMoveDto.matchId = match.id;
+      primaryUserMoveDto.userId = randomPrimaryUser.id;
+      primaryUserMoveDto.move = primaryUserMove;
+      await this.matchService.makeMove(primaryUserMoveDto);
+
+      const secondaryUserMoveDto = new MakeMoveDto();
+      secondaryUserMoveDto.matchId = match.id;
+      secondaryUserMoveDto.userId = randomSecondaryUser.id;
+      secondaryUserMoveDto.move = secondaryUserMove;
+      await this.matchService.makeMove(secondaryUserMoveDto);
+
+      console.log(
+        `==== COUNT= ${i} match=${match.id} - ${randomPrimaryUser.id}:${primaryUserMove} - ${randomSecondaryUser.id}:${secondaryUserMove}`,
+      );
     }
     console.log('DONE simulate matches .....');
+
+    return 'DONE';
+  }
+
+  /**
+   * This is only for testing
+   * @returns
+   */
+  @Get('create/simulate/fixed')
+  async simulateFixed(@Body() fixedDto: SimulateFixedDto) {
+    console.log('BEGIN simulateFixed .....');
+    // Create match
+    const createMatchDto = new CreateMatchDto();
+    createMatchDto.userId = fixedDto.primaryUserId;
+    createMatchDto.opponentId = fixedDto.secondaryUserId;
+    const match = await this.createMatch(createMatchDto);
+
+    // Make 2 moves
+    const primaryUserMoveDto = new MakeMoveDto();
+    primaryUserMoveDto.matchId = match.id;
+    primaryUserMoveDto.userId = fixedDto.primaryUserId;
+    primaryUserMoveDto.move = fixedDto.primaryUserMove;
+    await this.matchService.makeMove(primaryUserMoveDto);
+
+    const secondaryUserMoveDto = new MakeMoveDto();
+    secondaryUserMoveDto.matchId = match.id;
+    secondaryUserMoveDto.userId = fixedDto.secondaryUserId;
+    secondaryUserMoveDto.move = fixedDto.secondaryUserMove;
+    await this.matchService.makeMove(secondaryUserMoveDto);
 
     return 'DONE';
   }
