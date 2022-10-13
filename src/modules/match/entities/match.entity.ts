@@ -17,10 +17,10 @@ export const MATCH_TBL_KEYS = {
 };
 
 export enum MatchResult {
-  NONE,
-  WIN,
-  DRAW,
-  LOSE,
+  NONE = 'NONE',
+  WIN = 'WIN',
+  DRAW = 'DRAW',
+  LOSE = 'LOSE',
 }
 
 @Entity({ name: MATCH_TBL_KEYS.tblName })

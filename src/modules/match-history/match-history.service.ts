@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMatchHistoryDto } from './dto/create-match-history.dto';
-import { UpdateMatchHistoryDto } from './dto/update-match-history.dto';
 import { MatchHistory } from './entities/match-history.entity';
 
 @Injectable()
@@ -16,6 +15,11 @@ export class MatchHistoryService {
     const matchHistory = new MatchHistory();
     matchHistory.id = createMatchHistoryDto.id;
     matchHistory.matchDate = createMatchHistoryDto.matchDate;
+    matchHistory.primaryUserId = createMatchHistoryDto.primaryUserId;
+    matchHistory.primaryUserMove = createMatchHistoryDto.primaryUserMove;
+    matchHistory.secondaryUserId = createMatchHistoryDto.secondaryUserId;
+    matchHistory.secondaryUserMove = createMatchHistoryDto.secondaryUserMove;
+    matchHistory.result = createMatchHistoryDto.result;
     return this.matchHistoryRepo.save(matchHistory);
   }
 
@@ -27,5 +31,20 @@ export class MatchHistoryService {
     return this.matchHistoryRepo.findOne({
       where: { id: id },
     });
+  }
+
+  findAllByUserIdLimitOffset(userId: string, offset: number, limit: number) {
+    return this.matchHistoryRepo.find({
+      where: [
+        {
+          primaryUserId: userId,
+        }, 
+        {
+          secondaryUserId: userId
+        }
+      ],
+      skip: offset,
+      take: limit,
+    })
   }
 }

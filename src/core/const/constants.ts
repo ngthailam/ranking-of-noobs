@@ -4,4 +4,5 @@ export const CONSTS = {
     kFactor: 20,
     findOpponentEloRange: 200,
     defaultUserLimit: 100,
+    defaultHistoryLimit: 12,
 }

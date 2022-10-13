@@ -5,11 +5,13 @@ import { UserService } from '../user/user.service';
 import { randomInt } from 'src/core/utils/random';
 import { MakeMoveDto, ValidMove } from './dto/make-move.dto';
 import { SimulateFixedDto } from './dto/simulate-fixed.dto';
+import { MatchHistoryService } from '../match-history/match-history.service';
 
 @Controller('match')
 export class MatchController {
   constructor(
     private readonly matchService: MatchService,
+    private readonly matchHistoryService: MatchHistoryService,
     private readonly userService: UserService,
   ) {}
 
@@ -18,10 +20,11 @@ export class MatchController {
     return this.matchService.createMatch(createMatchDto);
   }
 
-  @Get()
-  getAll() {
-    return this.matchService.findAll();
-  }
+  // Should not be public
+  // @Get()
+  // getAll() {
+  //   return this.matchService.findAll();
+  // }
 
   @Post('/make-move')
   makeMove(@Body() makeMoveDto: MakeMoveDto) {
@@ -29,11 +32,16 @@ export class MatchController {
   }
 
   @Get(':id')
-  getById(@Param('id') id: string) {
-    return this.matchService.findOne(id);
+  async getById(@Param('id') id: string) {
+    const match = await this.matchService.findOne(id);
+    if (match) {
+      return match;
+    }
+
+    return this.matchHistoryService.findOne(id);
   }
 
-  @Get('/pending/:uid')
+  @Get('/ongoing/:uid')
   getByUserId(@Param('uid') uid: string) {
     return this.matchService.findAllByUserId(uid);
   }
