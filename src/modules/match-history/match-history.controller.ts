@@ -1,6 +1,5 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { MatchHistoryService } from './match-history.service';
-import { CreateMatchHistoryDto } from './dto/create-match-history.dto';
 import { CONSTS } from 'src/core/const/constants';
 
 @Controller('match-history')
@@ -20,13 +19,13 @@ export class MatchHistoryController {
   @Get('user/:uid')
   getByUserId(
     @Param('uid') uid: string,
-    @Query('limit') limit: number = CONSTS.defaultHistoryLimit,
-    @Query('offset') offset: number = 0,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
     return this.matchHistoryService.findAllByUserIdLimitOffset(
       uid,
-      limit,
-      offset,
+      limit ?? CONSTS.defaultHistoryLimit,
+      offset ?? 0,
     );
   }
 }

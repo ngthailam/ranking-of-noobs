@@ -33,7 +33,7 @@ export class MatchHistoryService {
     });
   }
 
-  findAllByUserIdLimitOffset(userId: string, offset: number, limit: number) {
+  findAllByUserIdLimitOffset(userId: string, limit: number, offset: number) {
     return this.matchHistoryRepo.find({
       where: [
         {

@@ -5,7 +5,12 @@ import { randomInt } from 'src/core/utils/random';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserResultDto } from './dto/update-user-result.dto';
-import { User, USER_TBL_KEYS } from './entities/user.entity';
+import {
+  User,
+  UserRank,
+  UserRankCalculator,
+  USER_TBL_KEYS,
+} from './entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -121,6 +126,14 @@ export class UserService {
         matchCount: updateUserDto.matchCount,
       },
     );
+  }
+
+  async updateAllUsersRank() {
+    const allUsers: User[] = await this.findAll();
+    allUsers.forEach((element) => {
+      element.rank = UserRankCalculator.calculate(element.elo);
+      this.userRepo.save(element);
+    });
   }
 
   remove(id: string) {

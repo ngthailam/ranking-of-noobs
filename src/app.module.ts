@@ -6,6 +6,8 @@ import { MatchModule } from './modules/match/match.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MatchHistoryModule } from './modules/match-history/match-history.module';
 import { StatsModule } from './modules/stats/stats.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TaskSchedulingModule } from './modules/task-scheduling/task-scheduling.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { StatsModule } from './modules/stats/stats.module';
     UserModule,
     MatchHistoryModule,
     StatsModule,
+    TaskSchedulingModule,
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [],
       inject: [],

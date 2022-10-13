@@ -11,11 +11,24 @@ export const USER_TBL_KEYS = {
 };
 
 export enum UserRank {
-  NONE,
-  BRONZE,
-  GOLD,
-  DIAMOND,
-  CHALLENGER, // Only top 100 user
+  NONE = 'NONE',
+  BRONZE = 'BRONZE',
+  SILVER = 'SILVER',
+  GOLD = 'GOLD',
+  DIAMOND = 'DIAMOND',
+  CHALLENGER = 'CHALLENGER', // Only top 100 user
+}
+
+export class UserRankCalculator {
+  static calculate(elo: number): UserRank {
+    if (elo > 1800) return UserRank.CHALLENGER;
+    if (elo > 1500) return UserRank.DIAMOND;
+    if (elo > 1200) return UserRank.GOLD;
+    if (elo > 900) return UserRank.SILVER;
+    if (elo > 600) return UserRank.BRONZE;
+
+    return UserRank.NONE;
+  }
 }
 
 @Entity({ name: USER_TBL_KEYS.tblName })
