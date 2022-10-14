@@ -1,6 +1,9 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { MatchHistoryService } from './match-history.service';
 import { CONSTS } from 'src/core/const/constants';
+import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
+import { JwtAuthUser } from '../auth/jwt/jwt-extractor';
+import { User } from '../user/entities/user.entity';
 
 @Controller('match-history')
 export class MatchHistoryController {
@@ -16,14 +19,15 @@ export class MatchHistoryController {
     return this.matchHistoryService.findOne(id);
   }
 
-  @Get('user/:uid')
+  @Get('user/list')
+  @UseGuards(JwtAuthGuard)
   getByUserId(
-    @Param('uid') uid: string,
+    @JwtAuthUser() user: User,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
     return this.matchHistoryService.findAllByUserIdLimitOffset(
-      uid,
+      user.id,
       limit ?? CONSTS.defaultHistoryLimit,
       offset ?? 0,
     );

@@ -28,8 +28,13 @@ export class EloCalculator {
     const eloChange = CONSTS.kFactor * (gameOutcome - expectedScore);
 
     const expectedElo = Math.ceil(eloChange);
-    if (expectedElo > secondaryElo) {
+
+    // TODO: this looks like it will cause trouble if your elo is so low
+    if (expectedElo >= secondaryElo) {
       return secondaryElo;
+    }
+    if (expectedElo >= primaryElo) {
+      return primaryElo;
     }
 
     return expectedElo;

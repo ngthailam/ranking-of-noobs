@@ -6,6 +6,7 @@ import { Match } from './entities/match.entity';
 import { UserModule } from '../user/user.module';
 import { MatchHistoryModule } from '../match-history/match-history.module';
 import { StatsModule } from '../stats/stats.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { StatsModule } from '../stats/stats.module';
     UserModule,
     MatchHistoryModule,
     StatsModule,
+    AuthModule,
   ],
   controllers: [MatchController],
   providers: [MatchService],

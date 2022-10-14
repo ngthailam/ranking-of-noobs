@@ -44,7 +44,7 @@ export class User {
   @PrimaryGeneratedColumn('uuid', { name: USER_TBL_KEYS.id })
   id: string;
 
-  @Column({ name: USER_TBL_KEYS.name })
+  @Column({ name: USER_TBL_KEYS.name, unique: true })
   name: string;
 
   @Column({ name: USER_TBL_KEYS.elo, default: CONSTS.baseElo })

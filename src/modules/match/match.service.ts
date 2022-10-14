@@ -46,12 +46,13 @@ export class MatchService {
   async createMatch(createMatchDto: CreateMatchDto) {
     // Find a random opponent if an opponent is not specified
     const primaryUser = await this.userService.findOne(createMatchDto.userId);
-    const secondaryUser = createMatchDto.opponentId
-      ? await this.userService.findOne(createMatchDto.opponentId)
-      : await this.userService.forceFindOneWithinEloRange(
-          primaryUser.id,
-          primaryUser.elo,
-        );
+    const secondaryUser =
+      createMatchDto.opponentId && createMatchDto.opponentId.length !== 0
+        ? await this.userService.findOne(createMatchDto.opponentId)
+        : await this.userService.forceFindOneWithinEloRange(
+            primaryUser.id,
+            primaryUser.elo,
+          );
 
     if (!secondaryUser || !secondaryUser.id) {
       throw new HttpException(
@@ -147,8 +148,6 @@ export class MatchService {
       matchResult,
     );
 
-    // TODO: add prevent elo going down below 0
-
     // Set match history
     this.matchHistoryService.create(CreateMatchHistoryDto.from(match));
 
@@ -176,7 +175,6 @@ export class MatchService {
         new UpdateUserResultDto(secondaryUser.matchCount, secondaryUser.elo),
       ),
 
-      // TODO: should I delete this match ???????
       this.matchRepo.delete({ id: match.id }),
     ]);
 

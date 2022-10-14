@@ -5,12 +5,6 @@ An ELO system to put players in a game into ranks based on their performance
 
 ## TODO
 
-[x] CRUD player (basic)
-[x] ELO system
-
-- Match making system (basic random first)
-- Ranking system
-
 ## Installation
 
 ```bash

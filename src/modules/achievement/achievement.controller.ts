@@ -1,19 +1,24 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
+import { JwtAuthUser } from '../auth/jwt/jwt-extractor';
+import { User } from '../user/entities/user.entity';
 import { AchievementService } from './achievement.service';
 
 @Controller('achievement')
 export class AchievementController {
   constructor(private readonly achievementService: AchievementService) {}
 
-  @Get('/user/:id')
+  @Get('/user/list')
+  @UseGuards(JwtAuthGuard)
   getAllByUserId(
-    @Param('id') id: string,
+    @JwtAuthUser() user: User,
     @Query('done') done: string = 'false',
   ) {
-    return this.achievementService.findAllByUserId(id, done == 'true');
+    return this.achievementService.findAllByUserId(user.id, done == 'true');
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   getAll() {
     return this.achievementService.findAll();
   }

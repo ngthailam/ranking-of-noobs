@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { MatchService } from './match.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UserService } from '../user/user.service';
@@ -6,6 +6,11 @@ import { randomInt } from 'src/core/utils/random';
 import { MakeMoveDto, ValidMove } from './dto/make-move.dto';
 import { SimulateFixedDto } from './dto/simulate-fixed.dto';
 import { MatchHistoryService } from '../match-history/match-history.service';
+import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
+import { CreateMatchRequest } from './dto/request/create-match.request';
+import { JwtAuthUser } from '../auth/jwt/jwt-extractor';
+import { User } from '../user/entities/user.entity';
+import { MakeMoveRequest } from './dto/request/make-move.request';
 
 @Controller('match')
 export class MatchController {
@@ -16,21 +21,31 @@ export class MatchController {
   ) {}
 
   @Post('')
-  createMatch(@Body() createMatchDto: CreateMatchDto) {
+  @UseGuards(JwtAuthGuard)
+  createMatch(
+    @JwtAuthUser() user: User,
+    @Body() createMatchRequest: CreateMatchRequest,
+  ) {
+    const createMatchDto = new CreateMatchDto();
+    createMatchDto.opponentId = createMatchRequest.opponentId;
+    createMatchDto.userId = user.id;
     return this.matchService.createMatch(createMatchDto);
   }
 
-  // Should not be public
-  // @Get()
-  // getAll() {
-  //   return this.matchService.findAll();
-  // }
-
+  @UseGuards(JwtAuthGuard)
   @Post('/make-move')
-  makeMove(@Body() makeMoveDto: MakeMoveDto) {
+  makeMove(
+    @JwtAuthUser() user: User,
+    @Body() makeMoveRequest: MakeMoveRequest,
+  ) {
+    const makeMoveDto = new MakeMoveDto();
+    makeMoveDto.matchId = makeMoveRequest.matchId;
+    makeMoveDto.move = makeMoveRequest.move;
+    makeMoveDto.userId = user.id;
     return this.matchService.makeMove(makeMoveDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   async getById(@Param('id') id: string) {
     const match = await this.matchService.findOne(id);
@@ -41,9 +56,20 @@ export class MatchController {
     return this.matchHistoryService.findOne(id);
   }
 
-  @Get('/ongoing/:uid')
-  getByUserId(@Param('uid') uid: string) {
+  @UseGuards(JwtAuthGuard)
+  @Get('user/ongoing')
+  getByUserId(@JwtAuthUser() user: User) {
+    const uid = user.id;
     return this.matchService.findAllByUserId(uid);
+  }
+
+  /**
+   * This is only for testing
+   * @returns
+   */
+  @Get()
+  getAll() {
+    return this.matchService.findAll();
   }
 
   /**
@@ -51,12 +77,11 @@ export class MatchController {
    * @param count
    * @returns
    */
+  @UseGuards(JwtAuthGuard)
   @Get('create/:count')
   async simulate(@Param('count') count: string) {
     console.log('BEGIN simulate matches .....');
     const moves = [ValidMove.ROCK, ValidMove.PAPER, ValidMove.SCISSORS];
-
-    // TODO: refactor: use this.simulateFixed instead
 
     for (let i = 0; i < +count; i++) {
       const randomPrimaryUser = await this.userService.findRandom();
@@ -90,14 +115,15 @@ export class MatchController {
    * This is only for testing
    * @returns
    */
+  @UseGuards(JwtAuthGuard)
   @Get('create/simulate/fixed')
   async simulateFixed(@Body() fixedDto: SimulateFixedDto) {
     console.log('BEGIN simulateFixed .....');
     // Create match
     const createMatchDto = new CreateMatchDto();
-    createMatchDto.userId = fixedDto.primaryUserId;
     createMatchDto.opponentId = fixedDto.secondaryUserId;
-    const match = await this.createMatch(createMatchDto);
+    createMatchDto.userId = fixedDto.primaryUserId;
+    const match = await this.matchService.createMatch(createMatchDto);
 
     console.log(`[Simulate] Match=${JSON.stringify(match)}`);
 

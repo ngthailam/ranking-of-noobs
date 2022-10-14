@@ -10,6 +10,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TaskSchedulingModule } from './modules/task-scheduling/task-scheduling.module';
 import { AchievementModule } from './modules/achievement/achievement.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
         synchronize: true,
       }),
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

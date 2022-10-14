@@ -7,7 +7,6 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserResultDto } from './dto/update-user-result.dto';
 import {
   User,
-  UserRank,
   UserRankCalculator,
   USER_TBL_KEYS,
 } from './entities/user.entity';
@@ -29,10 +28,23 @@ export class UserService {
     );
   }
 
-  create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto) {
     const user = new User();
     user.name = createUserDto.name;
+
+    // TODO: maybe name already unique => catch db exception instead
+    if (await this.findOneByName(createUserDto.name)) {
+      throw new HttpException(
+        `User with name = ${createUserDto.name} already exists`,
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    }
+
     return this.userRepo.save(user);
+  }
+
+  findOneByName(username: string) {
+    return this.userRepo.findOne({ where: { name: username } });
   }
 
   findAll() {

@@ -76,7 +76,6 @@ export class AchievementService {
       userId,
     );
     if (achievementUser.isDone) {
-      // TODO: should I throw an exception here ? maybe not
       this.logger.warn(
         `[updateProgress] Achievement is already done, id=${achievementId}, userId=${userId}`,
       );
@@ -131,7 +130,7 @@ export class AchievementService {
 
   @OnEvent(EVENTS_KEY.matchResult, { async: true })
   async handleMatchResultEvent(payload: MatchResultEvent) {
-    // TODO: get number of matches
+    // TODO: consider updating logic to improve performance
     const winnerUserId =
       payload.result == MatchResult.WIN
         ? payload.primaryUserId
@@ -165,8 +164,6 @@ export class AchievementService {
       await this.updateProgress(ACHIEVEMENT_KEY.GAMES_10, loserUserId);
       return;
     }
-
-    // TODO: update progress if needed
   }
 
   @OnEvent(EVENTS_KEY.makeMove, { async: true })
