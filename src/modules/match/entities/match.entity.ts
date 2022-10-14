@@ -13,6 +13,8 @@ export const MATCH_TBL_KEYS = {
   secondaryUserId: 'secondary_user_id',
   primaryUserMove: 'primary_user_move',
   secondaryUserMove: 'secondary_user_move',
+  isPrimaryUserSeenResult: 'is_primary_user_seen_result',
+  isSecondaryUserSeenResult: 'is_secondary_user_seen_result',
   createdAt: 'created_at',
 };
 
@@ -49,6 +51,12 @@ export class Match {
     nullable: true,
   })
   secondaryUserMove: ValidMove;
+
+  @Column({ name: MATCH_TBL_KEYS.isPrimaryUserSeenResult })
+  isPrimaryUserSeenResult: boolean;
+
+  @Column({ name: MATCH_TBL_KEYS.isSecondaryUserSeenResult })
+  isSecondaryUserSeenResult: boolean;
 
   @CreateDateColumn({
     name: MATCH_TBL_KEYS.createdAt,

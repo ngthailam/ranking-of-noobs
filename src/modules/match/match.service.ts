@@ -125,6 +125,25 @@ export class MatchService {
     return this.setResult(matchResultDto);
   }
 
+  async setSeenResult(userId: string, matchId: string) {
+    const match = await this.findOne(matchId);
+    const isPrimary = match.primaryUserId == userId;
+
+    // If both has seen result, delete the match
+    if ((isPrimary && match.isSecondaryUserSeenResult) || (!isPrimary && match.isPrimaryUserSeenResult)) {
+      await this.matchRepo.delete({
+        id: matchId
+      });
+      return 'OK';
+    }
+
+    await this.matchRepo.update(matchId, {
+      isPrimaryUserSeenResult: isPrimary ? true : match.isPrimaryUserSeenResult,
+      isSecondaryUserSeenResult: !isPrimary ? true : match.isSecondaryUserSeenResult,
+    });
+    return 'OK';
+  }
+
   private async setResult(matchResultDto: MatchResultDto) {
     const matchResult: MatchResult = MatchResult[matchResultDto.result];
 
@@ -203,8 +222,6 @@ export class MatchService {
         secondaryUser.id,
         new UpdateUserResultDto(secondaryUser.matchCount, secondaryUser.elo),
       ),
-
-      this.matchRepo.delete({ id: match.id }),
     ]);
 
     this.eventEmitter.emit(

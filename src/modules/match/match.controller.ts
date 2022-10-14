@@ -46,14 +46,16 @@ export class MatchController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  async getById(@Param('id') id: string) {
-    const match = await this.matchService.findOne(id);
-    if (match) {
-      return match;
-    }
 
-    return this.matchHistoryService.findOne(id);
+  @Post('/seen-result/:matchId')
+  setSeenResult(@JwtAuthUser() user: User, @Param('matchId') matchId: string) {
+    return this.matchService.setSeenResult(user.id, matchId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  getById(@Param('id') id: string) {
+    return this.matchService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard)
