@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMatchHistoryDto } from '../match-history/dto/create-match-history.dto';
@@ -29,6 +29,8 @@ export class MatchService {
     private readonly statsService: StatsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  private readonly logger = new Logger(MatchService.name);
 
   async findOne(id: string) {
     const match = await this.matchRepo.findOne({
@@ -85,6 +87,14 @@ export class MatchService {
     // TODO: maybe add check if user not exist in findAllByMatchId or here
     const hasPrimaryUserMadeMove = isPrimary && match.primaryUserMove;
     const hasSecondaryUserMadeMove = !isPrimary && match.secondaryUserMove;
+
+    this.logger.log(`[makeMove] makeMoveDto: ${JSON.stringify(makeMoveDto)}`);
+
+    this.logger.log(
+      `[makeMove]  -- ${isPrimary} -- ${hasPrimaryUserMadeMove} -- ${hasSecondaryUserMadeMove}`,
+    );
+    this.logger.log(`[makeMove] match: ${JSON.stringify(match)}`);
+
     if (hasPrimaryUserMadeMove || hasSecondaryUserMadeMove) {
       throw new HttpException('Already made a move', HttpStatus.NOT_FOUND);
     }
