@@ -143,6 +143,9 @@ export class MatchController {
     secondaryUserMoveDto.move = fixedDto.secondaryUserMove;
     await this.matchService.makeMove(secondaryUserMoveDto);
 
+    await this.matchService.setSeenResult(primaryUserMoveDto.userId, match.id);
+    await this.matchService.setSeenResult(secondaryUserMoveDto.userId, match.id);
+
     return 'DONE';
   }
 }
