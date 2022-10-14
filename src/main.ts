@@ -5,12 +5,17 @@ import {
 } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { fastifyHelmet } from '@fastify/helmet'
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ logger: true }),
   );
+  // If you are not going to use CSP at all, you can use this:
+  await app.register(fastifyHelmet, {
+    contentSecurityPolicy: false,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Janken API')
