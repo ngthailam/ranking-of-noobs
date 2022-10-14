@@ -19,13 +19,21 @@ export enum UserRank {
   CHALLENGER = 'CHALLENGER', // Only top 100 user
 }
 
+export const USER_RANK_THRESHOLD = {
+  BRONZE: 500,
+  SILVER: 800,
+  GOLD: 1000,
+  DIAMOND: 1300,
+  CHALLENGER: 1600, // Only top 100 user
+};
+
 export class UserRankCalculator {
   static calculate(elo: number): UserRank {
-    if (elo > 1800) return UserRank.CHALLENGER;
-    if (elo > 1500) return UserRank.DIAMOND;
-    if (elo > 1200) return UserRank.GOLD;
-    if (elo > 900) return UserRank.SILVER;
-    if (elo > 600) return UserRank.BRONZE;
+    if (elo >= USER_RANK_THRESHOLD.CHALLENGER) return UserRank.CHALLENGER;
+    if (elo >= USER_RANK_THRESHOLD.DIAMOND) return UserRank.DIAMOND;
+    if (elo >= USER_RANK_THRESHOLD.GOLD) return UserRank.GOLD;
+    if (elo >= USER_RANK_THRESHOLD.SILVER) return UserRank.SILVER;
+    if (elo >= USER_RANK_THRESHOLD.BRONZE) return UserRank.BRONZE;
 
     return UserRank.NONE;
   }

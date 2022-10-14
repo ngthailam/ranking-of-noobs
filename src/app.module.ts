@@ -8,6 +8,7 @@ import { MatchHistoryModule } from './modules/match-history/match-history.module
 import { StatsModule } from './modules/stats/stats.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TaskSchedulingModule } from './modules/task-scheduling/task-scheduling.module';
+import { AchievementModule } from './modules/achievement/achievement.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TaskSchedulingModule } from './modules/task-scheduling/task-scheduling.
     MatchHistoryModule,
     StatsModule,
     TaskSchedulingModule,
+    AchievementModule,
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [],
