@@ -11,6 +11,9 @@ import { CreateMatchRequest } from './dto/request/create-match.request';
 import { JwtAuthUser } from '../auth/jwt/jwt-extractor';
 import { User } from '../user/entities/user.entity';
 import { MakeMoveRequest } from './dto/request/make-move.request';
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('match')
 
 @Controller('match')
 export class MatchController {

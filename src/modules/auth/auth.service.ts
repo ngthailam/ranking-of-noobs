@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { RegisterRequest } from './dto/register.request';
+import { LoginRequest } from './dto/login.request';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginRequest) {
     const user = await this.userService.findOneByName(loginDto.name);
 
     if (!user) {
@@ -41,7 +41,7 @@ export class AuthService {
     };
   }
 
-  register(registerDto: RegisterDto) {
+  register(registerDto: RegisterRequest) {
     const createUserDto = new CreateUserDto();
     createUserDto.name = registerDto.name;
     return this.userService.create(createUserDto);

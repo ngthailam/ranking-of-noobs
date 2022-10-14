@@ -4,7 +4,9 @@ import { CONSTS } from 'src/core/const/constants';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { JwtAuthUser } from '../auth/jwt/jwt-extractor';
 import { User } from '../user/entities/user.entity';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('match history')
 @Controller('match-history')
 export class MatchHistoryController {
   constructor(private readonly matchHistoryService: MatchHistoryService) {}

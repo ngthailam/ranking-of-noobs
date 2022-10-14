@@ -1,9 +1,11 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { JwtAuthUser } from '../auth/jwt/jwt-extractor';
 import { User } from '../user/entities/user.entity';
 import { AchievementService } from './achievement.service';
 
+@ApiTags('achievement')
 @Controller('achievement')
 export class AchievementController {
   constructor(private readonly achievementService: AchievementService) {}
