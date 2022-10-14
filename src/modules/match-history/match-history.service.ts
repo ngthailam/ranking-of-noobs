@@ -20,6 +20,18 @@ export class MatchHistoryService {
     matchHistory.secondaryUserId = createMatchHistoryDto.secondaryUserId;
     matchHistory.secondaryUserMove = createMatchHistoryDto.secondaryUserMove;
     matchHistory.result = createMatchHistoryDto.result;
+    matchHistory.primaryUserEloBefore =
+      createMatchHistoryDto.primaryUserEloBefore;
+    matchHistory.primaryUserEloAfter =
+      createMatchHistoryDto.primaryUserEloAfter;
+    matchHistory.primaryUserEloChange =
+      createMatchHistoryDto.primaryUserEloChange;
+    matchHistory.secondaryUserEloBefore =
+      createMatchHistoryDto.secondaryUserEloBefore;
+    matchHistory.secondaryUserEloAfter =
+      createMatchHistoryDto.secondaryUserEloAfter;
+    matchHistory.secondaryUserEloChange =
+      createMatchHistoryDto.secondaryUserEloChange;
     return this.matchHistoryRepo.save(matchHistory);
   }
 
@@ -38,13 +50,13 @@ export class MatchHistoryService {
       where: [
         {
           primaryUserId: userId,
-        }, 
+        },
         {
-          secondaryUserId: userId
-        }
+          secondaryUserId: userId,
+        },
       ],
       skip: offset,
       take: limit,
-    })
+    });
   }
 }

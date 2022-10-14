@@ -8,7 +8,6 @@ import { StatsService } from './stats.service';
 export class StatsController {
   constructor(private readonly statsService: StatsService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Get('/leaderboard')
   getLeaderboard() {
     return this.statsService.getLeaderboard();

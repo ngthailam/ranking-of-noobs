@@ -17,7 +17,25 @@ export class CreateMatchHistoryDto {
 
   result: MatchResult;
 
-  static from(match: Match): CreateMatchHistoryDto {
+  primaryUserEloBefore: number;
+
+  primaryUserEloAfter: number;
+
+  primaryUserEloChange: number;
+
+  secondaryUserEloBefore: number;
+
+  secondaryUserEloAfter: number;
+  
+  secondaryUserEloChange: number;
+
+  static from(
+    match: Match,
+    primaryUserEloBefore: number,
+    primaryUserEloAfter: number,
+    secondaryUserEloBefore: number,
+    secondaryUserEloAfter: number,
+  ): CreateMatchHistoryDto {
     const matchHistoryDto = new CreateMatchHistoryDto();
     matchHistoryDto.id = match.id;
     matchHistoryDto.matchDate = match.createdAt;
@@ -29,6 +47,16 @@ export class CreateMatchHistoryDto {
       matchHistoryDto.primaryUserMove,
       matchHistoryDto.secondaryUserMove,
     );
+
+    matchHistoryDto.primaryUserEloBefore = primaryUserEloBefore;
+    matchHistoryDto.primaryUserEloAfter = primaryUserEloAfter;
+    matchHistoryDto.primaryUserEloChange =
+      primaryUserEloAfter - primaryUserEloBefore;
+    matchHistoryDto.secondaryUserEloBefore = secondaryUserEloBefore;
+    matchHistoryDto.secondaryUserEloAfter = secondaryUserEloAfter;
+    matchHistoryDto.secondaryUserEloChange =
+      secondaryUserEloAfter - secondaryUserEloBefore;
+
     return matchHistoryDto;
   }
 }

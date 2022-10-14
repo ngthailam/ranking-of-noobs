@@ -77,7 +77,6 @@ export class MatchController {
    * @param count
    * @returns
    */
-  @UseGuards(JwtAuthGuard)
   @Get('create/:count')
   async simulate(@Param('count') count: string) {
     console.log('BEGIN simulate matches .....');
@@ -115,7 +114,6 @@ export class MatchController {
    * This is only for testing
    * @returns
    */
-  @UseGuards(JwtAuthGuard)
   @Get('create/simulate/fixed')
   async simulateFixed(@Body() fixedDto: SimulateFixedDto) {
     console.log('BEGIN simulateFixed .....');

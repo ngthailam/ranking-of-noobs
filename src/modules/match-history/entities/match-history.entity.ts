@@ -9,6 +9,12 @@ export const MATCH_HISTORY_TBL_KEYS = {
   secondaryUserId: 'secondary_user_id',
   primaryUserMove: 'primary_user_move',
   secondaryUserMove: 'secondary_user_move',
+  primaryUserEloBefore: 'primary_user_elo_before',
+  primaryUserEloAfter: 'primary_user_elo_after',
+  primaryUserEloChange: 'primary_user_elo_change',
+  secondaryUserEloBefore: 'secondary_user_elo_before',
+  secondaryUserEloAfter: 'secondary_user_elo_after',
+  secondaryUserEloChange: 'secondary_user_elo_change',
   result: 'result',
   matchDate: 'match_date',
 };
@@ -44,6 +50,24 @@ export class MatchHistory {
     enum: MatchResult,
   })
   result: MatchResult;
+
+  @Column({ name: MATCH_HISTORY_TBL_KEYS.primaryUserEloBefore, default: 0 })
+  primaryUserEloBefore: number;
+
+  @Column({ name: MATCH_HISTORY_TBL_KEYS.primaryUserEloAfter, default: 0 })
+  primaryUserEloAfter: number;
+
+  @Column({ name: MATCH_HISTORY_TBL_KEYS.primaryUserEloChange, default: 0 })
+  primaryUserEloChange: number;
+
+  @Column({ name: MATCH_HISTORY_TBL_KEYS.secondaryUserEloBefore, default: 0 })
+  secondaryUserEloBefore: number;
+
+  @Column({ name: MATCH_HISTORY_TBL_KEYS.secondaryUserEloAfter, default: 0 })
+  secondaryUserEloAfter: number;
+
+  @Column({ name: MATCH_HISTORY_TBL_KEYS.secondaryUserEloChange, default: 0 })
+  secondaryUserEloChange: number;
 
   @Column({
     name: MATCH_HISTORY_TBL_KEYS.matchDate,

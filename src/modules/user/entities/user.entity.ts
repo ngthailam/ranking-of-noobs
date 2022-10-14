@@ -20,11 +20,11 @@ export enum UserRank {
 }
 
 export const USER_RANK_THRESHOLD = {
-  BRONZE: 500,
-  SILVER: 800,
+  BRONZE: 800,
+  SILVER: 900,
   GOLD: 1000,
-  DIAMOND: 1300,
-  CHALLENGER: 1600, // Only top 100 user
+  DIAMOND: 1100,
+  CHALLENGER: 1200, // Only top 100 user
 };
 
 export class UserRankCalculator {

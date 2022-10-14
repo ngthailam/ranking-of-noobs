@@ -148,14 +148,43 @@ export class MatchService {
       matchResult,
     );
 
+    let primaryUserEloAfter = primaryUser.elo + elo;
+    let secondaryUserEloAfter = secondaryUser.elo + elo;
+
+    switch (matchResult) {
+      case MatchResult.DRAW:
+        primaryUserEloAfter =
+          primaryUser.elo + (primaryUser.elo > secondaryUser.elo ? elo : -elo);
+        secondaryUserEloAfter =
+          secondaryUser.elo +
+          (secondaryUser.elo > primaryUser.elo ? elo : -elo);
+        break;
+      case MatchResult.WIN:
+        primaryUserEloAfter = primaryUser.elo + elo;
+        secondaryUserEloAfter = secondaryUser.elo - elo;
+        break;
+      case MatchResult.LOSE:
+        primaryUserEloAfter = primaryUser.elo - elo;
+        secondaryUserEloAfter = secondaryUser.elo + elo;
+        break;
+    }
+
     // Set match history
-    this.matchHistoryService.create(CreateMatchHistoryDto.from(match));
+    this.matchHistoryService.create(
+      CreateMatchHistoryDto.from(
+        match,
+        primaryUser.elo,
+        primaryUserEloAfter,
+        secondaryUser.elo,
+        secondaryUserEloAfter,
+      ),
+    );
 
     // Update match count + elo
     primaryUser.matchCount = primaryUser.matchCount + 1;
-    primaryUser.elo = primaryUser.elo + elo;
+    primaryUser.elo = primaryUserEloAfter;
     secondaryUser.matchCount = secondaryUser.matchCount + 1;
-    secondaryUser.elo = secondaryUser.elo - elo;
+    secondaryUser.elo = secondaryUserEloAfter;
 
     // Update stats
     await this.statsService.updateStatsOnMatchResult(
