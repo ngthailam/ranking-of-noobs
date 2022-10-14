@@ -9,9 +9,11 @@ import { StatsModule } from './modules/stats/stats.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TaskSchedulingModule } from './modules/task-scheduling/task-scheduling.module';
 import { AchievementModule } from './modules/achievement/achievement.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     MatchModule,
     UserModule,
     MatchHistoryModule,

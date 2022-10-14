@@ -10,7 +10,7 @@ export const ACHI_TBL_KEYS = {
 
 @Entity({ name: ACHI_TBL_KEYS.tblName })
 export class Achievement {
-  constructor(id: number, title: string, desc: string, max: number) {
+  constructor(id: string, title: string, desc: string, max: number) {
     this.id = id;
     this.title = title;
     this.desc = desc;
@@ -18,7 +18,7 @@ export class Achievement {
   }
 
   @PrimaryColumn({ name: ACHI_TBL_KEYS.id })
-  id: number;
+  id: string;
 
   @Column({ name: ACHI_TBL_KEYS.title })
   title: string;

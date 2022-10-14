@@ -6,6 +6,7 @@ import { Match, MatchResult } from '../match/entities/match.entity';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { Stats } from './entities/stats.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class StatsService {
@@ -13,6 +14,7 @@ export class StatsService {
     private readonly userService: UserService,
     @InjectRepository(Stats)
     private readonly statsRepo: Repository<Stats>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   findOneById(id: string) {
@@ -23,7 +25,7 @@ export class StatsService {
     primaryUser: User,
     secondaryUser: User,
     match: Match,
-    matchResult: MatchResult
+    matchResult: MatchResult,
   ) {
     const primaryUserStats = await this.getCreateIfNotExist(primaryUser.id);
     const secondaryUserStats = await this.getCreateIfNotExist(secondaryUser.id);

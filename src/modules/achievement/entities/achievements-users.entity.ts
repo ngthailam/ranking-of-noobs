@@ -17,12 +17,15 @@ export class AchievementsUsers {
   id: string;
 
   @Column({ name: ACHI_USER_TBL_KEYS.achievementId })
-  achievementId: number;
+  achievementId: string;
 
   @Column({ name: ACHI_USER_TBL_KEYS.userId })
   userId: string;
 
-  @Column({ name: ACHI_USER_TBL_KEYS.progress, default: ACHI_USER_TBL_KEYS.defaultProgress })
+  @Column({
+    name: ACHI_USER_TBL_KEYS.progress,
+    default: ACHI_USER_TBL_KEYS.defaultProgress,
+  })
   progress: number;
 
   @Column({ name: ACHI_USER_TBL_KEYS.isDone, default: false })

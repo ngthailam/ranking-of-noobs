@@ -12,6 +12,12 @@ import { Match, MatchResult } from './entities/match.entity';
 import { MatchResultCalculator } from './utils/win-lose-calculator';
 import { UpdateUserResultDto } from '../user/dto/update-user-result.dto';
 import { StatsService } from '../stats/stats.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  EVENTS_KEY,
+  MakeMoveEvent,
+  MatchResultEvent,
+} from 'src/core/const/events';
 
 @Injectable()
 export class MatchService {
@@ -21,6 +27,7 @@ export class MatchService {
     private readonly userService: UserService,
     private readonly matchHistoryService: MatchHistoryService,
     private readonly statsService: StatsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async findOne(id: string) {
@@ -61,9 +68,9 @@ export class MatchService {
     match.secondaryUserId = secondaryUser.id;
     const createdMatch = await this.matchRepo.save(match);
 
-    console.log(
-      `[MatchService] createMatch: match=${JSON.stringify(createdMatch)}`,
-    );
+    // console.log(
+    //   `[MatchService] createMatch: match=${JSON.stringify(createdMatch)}`,
+    // );
 
     return createdMatch;
   }
@@ -89,6 +96,16 @@ export class MatchService {
 
     // TODO: check this, this is to save the user move
     await this.matchRepo.save(match);
+
+    this.eventEmitter.emit(
+      EVENTS_KEY.makeMove,
+      new MakeMoveEvent(
+        makeMoveDto.matchId,
+        makeMoveDto.userId,
+        makeMoveDto.move,
+      ),
+    );
+
     if (!match.primaryUserMove || !match.secondaryUserMove) {
       return 'You made your move';
     }
@@ -142,7 +159,7 @@ export class MatchService {
     secondaryUser.elo = secondaryUser.elo - elo;
 
     // Update stats
-    this.statsService.updateStatsOnMatchResult(
+    await this.statsService.updateStatsOnMatchResult(
       primaryUser,
       secondaryUser,
       match,
@@ -162,6 +179,18 @@ export class MatchService {
       // TODO: should I delete this match ???????
       this.matchRepo.delete({ id: match.id }),
     ]);
+
+    this.eventEmitter.emit(
+      EVENTS_KEY.matchResult,
+      new MatchResultEvent(
+        match.id,
+        match.primaryUserId,
+        match.primaryUserMove,
+        match.secondaryUserId,
+        match.secondaryUserMove,
+        matchResult,
+      ),
+    );
   }
 
   findAll() {

@@ -46,4 +46,8 @@ export class Stats {
 
   @UpdateDateColumn({ name: STATS_TBL_KEYS.updatedAt })
   updatedAt: Date;
+
+  getMatchCount(): number {
+    return this.winCount + this.drawCount + this.loseCount;
+  }
 }
