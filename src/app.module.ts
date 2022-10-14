@@ -11,6 +11,7 @@ import { TaskSchedulingModule } from './modules/task-scheduling/task-scheduling.
 import { AchievementModule } from './modules/achievement/achievement.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from './modules/auth/auth.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AuthModule } from './modules/auth/auth.module';
       }),
     }),
     AuthModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
