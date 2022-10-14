@@ -67,6 +67,7 @@ export class MatchService {
     const match = new Match();
     match.primaryUserId = primaryUser.id;
     match.secondaryUserId = secondaryUser.id;
+    match.desc = createMatchDto.desc;
     const createdMatch = await this.matchRepo.save(match);
 
     // console.log(

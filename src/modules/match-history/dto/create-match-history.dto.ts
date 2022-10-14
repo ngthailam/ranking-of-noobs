@@ -29,6 +29,8 @@ export class CreateMatchHistoryDto {
   
   secondaryUserEloChange: number;
 
+  desc: string;
+
   static from(
     match: Match,
     primaryUserEloBefore: number,
@@ -47,6 +49,7 @@ export class CreateMatchHistoryDto {
       matchHistoryDto.primaryUserMove,
       matchHistoryDto.secondaryUserMove,
     );
+  matchHistoryDto.desc = match.desc;
 
     matchHistoryDto.primaryUserEloBefore = primaryUserEloBefore;
     matchHistoryDto.primaryUserEloAfter = primaryUserEloAfter;

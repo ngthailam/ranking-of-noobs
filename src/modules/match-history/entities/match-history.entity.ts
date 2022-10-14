@@ -16,6 +16,7 @@ export const MATCH_HISTORY_TBL_KEYS = {
   secondaryUserEloAfter: 'secondary_user_elo_after',
   secondaryUserEloChange: 'secondary_user_elo_change',
   result: 'result',
+  desc: 'desc',
   matchDate: 'match_date',
 };
 
@@ -68,6 +69,9 @@ export class MatchHistory {
 
   @Column({ name: MATCH_HISTORY_TBL_KEYS.secondaryUserEloChange, default: 0 })
   secondaryUserEloChange: number;
+
+  @Column({ name: MATCH_HISTORY_TBL_KEYS.desc, default: '' })
+  desc: string;
 
   @Column({
     name: MATCH_HISTORY_TBL_KEYS.matchDate,

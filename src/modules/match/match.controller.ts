@@ -32,6 +32,7 @@ export class MatchController {
     const createMatchDto = new CreateMatchDto();
     createMatchDto.opponentId = createMatchRequest.opponentId;
     createMatchDto.userId = user.id;
+    createMatchDto.desc = createMatchRequest.desc || '';
     return this.matchService.createMatch(createMatchDto);
   }
 

@@ -32,6 +32,7 @@ export class MatchHistoryService {
       createMatchHistoryDto.secondaryUserEloAfter;
     matchHistory.secondaryUserEloChange =
       createMatchHistoryDto.secondaryUserEloChange;
+      matchHistory.desc = createMatchHistoryDto.desc;
     return this.matchHistoryRepo.save(matchHistory);
   }
 
