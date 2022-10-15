@@ -12,6 +12,8 @@ import { AchievementModule } from './modules/achievement/achievement.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ResponseWrapperInterceptor } from './core/interceptors/response-wrapper.interceptor';
 
 @Module({
   imports: [
@@ -41,6 +43,12 @@ import { HealthModule } from './modules/health/health.module';
     HealthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseWrapperInterceptor,
+    },
+  ],
 })
 export class AppModule {}

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { MatchService } from './match.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UserService } from '../user/user.service';
@@ -19,7 +19,6 @@ import { ApiTags } from '@nestjs/swagger';
 export class MatchController {
   constructor(
     private readonly matchService: MatchService,
-    private readonly matchHistoryService: MatchHistoryService,
     private readonly userService: UserService,
   ) {}
 
@@ -38,6 +37,7 @@ export class MatchController {
 
   @UseGuards(JwtAuthGuard)
   @Post('/make-move')
+  @HttpCode(HttpStatus.OK)
   makeMove(
     @JwtAuthUser() user: User,
     @Body() makeMoveRequest: MakeMoveRequest,
@@ -50,8 +50,8 @@ export class MatchController {
   }
 
   @UseGuards(JwtAuthGuard)
-
   @Post('/seen-result/:matchId')
+  @HttpCode(HttpStatus.OK)
   setSeenResult(@JwtAuthUser() user: User, @Param('matchId') matchId: string) {
     return this.matchService.setSeenResult(user.id, matchId);
   }
