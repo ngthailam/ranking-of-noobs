@@ -53,10 +53,10 @@ export class Match {
   })
   secondaryUserMove: ValidMove;
 
-  @Column({ name: MATCH_TBL_KEYS.isPrimaryUserSeenResult })
+  @Column({ name: MATCH_TBL_KEYS.isPrimaryUserSeenResult, default: false })
   isPrimaryUserSeenResult: boolean;
 
-  @Column({ name: MATCH_TBL_KEYS.isSecondaryUserSeenResult })
+  @Column({ name: MATCH_TBL_KEYS.isSecondaryUserSeenResult, default: false })
   isSecondaryUserSeenResult: boolean;
 
   @Column({ name: MATCH_TBL_KEYS.desc, default: '' })

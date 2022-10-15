@@ -109,7 +109,7 @@ export class MatchService {
     );
 
     if (!match.primaryUserMove || !match.secondaryUserMove) {
-      return 'You made your move';
+      return match;
     }
 
     // Set result for the game if both users have made a move
@@ -130,19 +130,19 @@ export class MatchService {
     const match = await this.findOne(matchId);
     const isPrimary = match.primaryUserId == userId;
 
+    match.isPrimaryUserSeenResult = isPrimary ? true : match.isPrimaryUserSeenResult
+    match.isSecondaryUserSeenResult= !isPrimary ? true : match.isSecondaryUserSeenResult
+
     // If both has seen result, delete the match
     if ((isPrimary && match.isSecondaryUserSeenResult) || (!isPrimary && match.isPrimaryUserSeenResult)) {
       await this.matchRepo.delete({
         id: matchId
       });
-      return 'OK';
+      return match;
     }
 
-    await this.matchRepo.update(matchId, {
-      isPrimaryUserSeenResult: isPrimary ? true : match.isPrimaryUserSeenResult,
-      isSecondaryUserSeenResult: !isPrimary ? true : match.isSecondaryUserSeenResult,
-    });
-    return 'OK';
+    await this.matchRepo.save(match);
+    return match;
   }
 
   private async setResult(matchResultDto: MatchResultDto) {
