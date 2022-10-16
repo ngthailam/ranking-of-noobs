@@ -18,14 +18,15 @@ export class UserService {
     private readonly userRepo: Repository<User>,
   ) {}
 
-  getSortByElo(
+  async getSortByElo(
     order: 'ASC' | 'DESC' = 'DESC',
     limit: number = CONSTS.defaultUserLimit,
   ) {
-    return this.userRepo.query(
-      `SELECT * FROM ${USER_TBL_KEYS.tblName} 
-      ORDER BY ${USER_TBL_KEYS.elo} ${order} LIMIT ${limit}`,
-    );
+    return this.userRepo 
+    .createQueryBuilder(USER_TBL_KEYS.tblName)
+    .orderBy(`${USER_TBL_KEYS.tblName}.${USER_TBL_KEYS.elo}`, order)
+    .limit(limit)
+    .getMany();
   }
 
   async create(createUserDto: CreateUserDto) {
@@ -52,9 +53,7 @@ export class UserService {
   }
 
   async findRandom() {
-    const users: User[] = await this.userRepo.query(
-      `SELECT * FROM ${USER_TBL_KEYS.tblName}`,
-    );
+    const users: User[] = await this.userRepo.find();
 
     const randomIndex = randomInt(0, users.length);
     const randomUser: User = users[randomIndex];

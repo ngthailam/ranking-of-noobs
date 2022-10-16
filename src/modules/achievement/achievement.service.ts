@@ -57,16 +57,6 @@ export class AchievementService {
         return response;
       })
       .filter((element) => element.isDone == isDone);
-
-    // return this.achiRepo.query(
-    //   `
-    //     SELECT * FROM ${ACHI_TBL_KEYS.tblName}
-    //     LEFT JOIN ${ACHI_USER_TBL_KEYS.tblName}
-    //     ON ${ACHI_TBL_KEYS.tblName}.${ACHI_TBL_KEYS.id}=${ACHI_USER_TBL_KEYS.tblName}.${ACHI_USER_TBL_KEYS.achievementId}
-    //     WHERE ${ACHI_USER_TBL_KEYS.userId}='${id}'
-    //     ORDER BY ${ACHI_USER_TBL_KEYS.isDone} DESC, ${ACHI_TBL_KEYS.tblName}.${ACHI_TBL_KEYS.id}
-    //   `,
-    // );
   }
 
   async updateProgress(achievementId: string, userId: string) {
