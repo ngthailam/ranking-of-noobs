@@ -15,6 +15,8 @@ export const MATCH_TBL_KEYS = {
   secondaryUserMove: 'secondary_user_move',
   isPrimaryUserSeenResult: 'is_primary_user_seen_result',
   isSecondaryUserSeenResult: 'is_secondary_user_seen_result',
+  primaryUserElo: 'primary_user_elo',
+  secondaryUserElo: 'secondary_user_elo',
   desc: 'desc',
   createdAt: 'created_at',
 };
@@ -31,7 +33,7 @@ export class Match {
   @PrimaryGeneratedColumn('uuid', { name: MATCH_TBL_KEYS.id })
   id: string;
 
-  @Column({ name: MATCH_TBL_KEYS.primaryUserId })
+  @Column({ name: MATCH_TBL_KEYS.primaryUserId, nullable: true })
   primaryUserId: string;
 
   @Column({
@@ -42,7 +44,7 @@ export class Match {
   })
   primaryUserMove: ValidMove;
 
-  @Column({ name: MATCH_TBL_KEYS.secondaryUserId })
+  @Column({ name: MATCH_TBL_KEYS.secondaryUserId, nullable: true })
   secondaryUserId: string;
 
   @Column({
@@ -61,6 +63,12 @@ export class Match {
 
   @Column({ name: MATCH_TBL_KEYS.desc, default: '' })
   desc: string;
+
+  @Column({ name: MATCH_TBL_KEYS.primaryUserElo, default: 0})
+  primaryUserElo: number
+
+  @Column({ name: MATCH_TBL_KEYS.secondaryUserElo, default: 0})
+  secondaryUserElo: number
 
   @CreateDateColumn({
     name: MATCH_TBL_KEYS.createdAt,

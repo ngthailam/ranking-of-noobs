@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { MatchService } from './match.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UserService } from '../user/user.service';
@@ -14,7 +23,6 @@ import { MakeMoveRequest } from './dto/request/make-move.request';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('match')
-
 @Controller('match')
 export class MatchController {
   constructor(
@@ -29,9 +37,10 @@ export class MatchController {
     @Body() createMatchRequest: CreateMatchRequest,
   ) {
     const createMatchDto = new CreateMatchDto();
-    createMatchDto.opponentId = createMatchRequest.opponentId;
+    // TODO: enable whenm develop find opponent
+    // createMatchDto.opponentId = createMatchRequest.opponentId;
+    // createMatchDto.desc = createMatchRequest.desc || '';
     createMatchDto.userId = user.id;
-    createMatchDto.desc = createMatchRequest.desc || '';
     return this.matchService.createMatch(createMatchDto);
   }
 
@@ -145,7 +154,10 @@ export class MatchController {
     await this.matchService.makeMove(secondaryUserMoveDto);
 
     await this.matchService.setSeenResult(primaryUserMoveDto.userId, match.id);
-    await this.matchService.setSeenResult(secondaryUserMoveDto.userId, match.id);
+    await this.matchService.setSeenResult(
+      secondaryUserMoveDto.userId,
+      match.id,
+    );
 
     return 'DONE';
   }

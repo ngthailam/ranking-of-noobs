@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMatchHistoryDto } from '../match-history/dto/create-match-history.dto';
@@ -8,7 +8,7 @@ import { CreateMatchDto } from './dto/create-match.dto';
 import { MakeMoveDto } from './dto/make-move.dto';
 import { MatchResultDto } from './dto/match-result.dto';
 import { EloCalculator } from './utils/elo-calculator';
-import { Match, MatchResult } from './entities/match.entity';
+import { Match, MatchResult, MATCH_TBL_KEYS } from './entities/match.entity';
 import { MatchResultCalculator } from './utils/win-lose-calculator';
 import { UpdateUserResultDto } from '../user/dto/update-user-result.dto';
 import { StatsService } from '../stats/stats.service';
@@ -16,8 +16,10 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   EVENTS_KEY,
   MakeMoveEvent,
+  MatchInitiatedEvent,
   MatchResultEvent,
 } from 'src/core/const/events';
+import { CONSTS } from 'src/core/const/constants';
 
 @Injectable()
 export class MatchService {
@@ -29,6 +31,8 @@ export class MatchService {
     private readonly statsService: StatsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  private readonly logger = new Logger(MatchService.name);
 
   async findOne(id: string) {
     const match = await this.matchRepo.findOne({
@@ -44,61 +48,95 @@ export class MatchService {
   }
 
   async createMatch(createMatchDto: CreateMatchDto) {
-    // Find a random opponent if an opponent is not specified
-    const primaryUser = await this.userService.findOne(createMatchDto.userId);
-    const secondaryUser =
-      createMatchDto.opponentId && createMatchDto.opponentId.length !== 0
-        ? await this.userService.findOne(createMatchDto.opponentId)
-        : await this.userService.forceFindOneWithinEloRange(
-            primaryUser.id,
-            primaryUser.elo,
-          );
+    // Find open room with elo range
+    const user = await this.userService.findOne(createMatchDto.userId);
+    let match = await this.matchRepo
+      .createQueryBuilder(MATCH_TBL_KEYS.tblName)
+      .where(
+        `${MATCH_TBL_KEYS.tblName}.${MATCH_TBL_KEYS.primaryUserId} != '${createMatchDto.userId}'`,
+      )
+      .andWhere(
+        `${MATCH_TBL_KEYS.tblName}.${MATCH_TBL_KEYS.secondaryUserId} is null`,
+      )
+      .andWhere(
+        `${MATCH_TBL_KEYS.tblName}.${MATCH_TBL_KEYS.primaryUserElo} > ${
+          user.elo - CONSTS.findOpponentEloRange
+        } `,
+      )
+      .andWhere(
+        `${MATCH_TBL_KEYS.tblName}.${MATCH_TBL_KEYS.primaryUserElo} <= ${
+          user.elo + CONSTS.findOpponentEloRange
+        } `,
+      )
+      .orderBy('RANDOM()')
+      .limit(1)
+      .getOne();
 
-    if (!secondaryUser || !secondaryUser.id) {
-      throw new HttpException(
-        `Cannot find an opponent for ${JSON.stringify(
-          secondaryUser,
-        )} ${JSON.stringify(primaryUser)}`,
-        HttpStatus.NOT_FOUND,
+    this.logger.log(
+      `[createMatch], dto=${JSON.stringify(
+        createMatchDto,
+      )}, found match with id=${match?.id}`,
+    );
+
+    if (!match) {
+      // create new match if no match able to satisfy conditions
+      match = new Match();
+      match.primaryUserId = user.id;
+      match.primaryUserElo = user.elo;
+      match = await this.matchRepo.save(match);
+      this.logger.log(
+        `[createMatch], cannot find match, creating a new match, match=${JSON.stringify(
+          match,
+        )}`,
+      );
+    } else {
+      // join the match
+      match.secondaryUserId = user.id;
+      match.secondaryUserElo = user.elo;
+      match = await this.matchRepo.save(match);
+      this.eventEmitter.emit(
+        EVENTS_KEY.matchInitiated,
+        new MatchInitiatedEvent(match.id),
+      );
+      this.logger.log(
+        `[createMatch], joining match as secondary user, match=${JSON.stringify(
+          match,
+        )}`,
       );
     }
 
-    // Create a new match here
-    const match = new Match();
-    match.primaryUserId = primaryUser.id;
-    match.secondaryUserId = secondaryUser.id;
-    match.desc = createMatchDto.desc;
-    const createdMatch = await this.matchRepo.save(match);
-
-    // console.log(
-    //   `[MatchService] createMatch: match=${JSON.stringify(createdMatch)}`,
-    // );
-
-    return createdMatch;
+    return match;
   }
 
   async makeMove(makeMoveDto: MakeMoveDto) {
-    // TODO: needs to refactor this, to ugly
     const match = await this.findOne(makeMoveDto.matchId);
     const isPrimary = makeMoveDto.userId == match.primaryUserId;
 
     // TODO: maybe add check if user not exist in findAllByMatchId or here
     const hasPrimaryUserMadeMove = isPrimary && match.primaryUserMove;
     const hasSecondaryUserMadeMove = !isPrimary && match.secondaryUserMove;
+    
+    console.log(` ZZLL ${match.primaryUserId} - ${match.secondaryUserId}`)
     if (hasPrimaryUserMadeMove || hasSecondaryUserMadeMove) {
       throw new HttpException('Already made a move', HttpStatus.NOT_FOUND);
     }
 
-    // TODO: makeMove
+    if (!match.primaryUserId || !match.secondaryUserId) {
+      throw new HttpException(
+        'Cannot make a move before you have an opponent',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Saving user move
     if (isPrimary) {
       match.primaryUserMove = makeMoveDto.move;
     } else {
       match.secondaryUserMove = makeMoveDto.move;
     }
-
-    // TODO: check this, this is to save the user move
     await this.matchRepo.save(match);
 
+    // Emit made move event
     this.eventEmitter.emit(
       EVENTS_KEY.makeMove,
       new MakeMoveEvent(
@@ -108,13 +146,16 @@ export class MatchService {
       ),
     );
 
+    // Returning the match result
+    let matchResultDto = new MatchResultDto();
+    matchResultDto.match = match;
+
+    // If theres still 1 user who hasnt made a move, just return the object
     if (!match.primaryUserMove || !match.secondaryUserMove) {
       return match;
     }
 
-    // Set result for the game if both users have made a move
-    const matchResultDto = new MatchResultDto();
-    matchResultDto.match = match;
+    // If both user has made a move, set the result for the match
     matchResultDto.result =
       MatchResult[
         MatchResultCalculator.calculate(
@@ -123,26 +164,32 @@ export class MatchService {
         )
       ];
 
-    return this.setResult(matchResultDto);
+    this.setResult(matchResultDto);
+
+    return matchResultDto;
   }
 
   async setSeenResult(userId: string, matchId: string) {
     const match = await this.findOne(matchId);
     const isPrimary = match.primaryUserId == userId;
 
-    match.isPrimaryUserSeenResult = isPrimary ? true : match.isPrimaryUserSeenResult
-    match.isSecondaryUserSeenResult= !isPrimary ? true : match.isSecondaryUserSeenResult
+    match.isPrimaryUserSeenResult = isPrimary
+      ? true
+      : match.isPrimaryUserSeenResult;
+    match.isSecondaryUserSeenResult = !isPrimary
+      ? true
+      : match.isSecondaryUserSeenResult;
 
     // If both has seen result, delete the match
-    if ((isPrimary && match.isSecondaryUserSeenResult) || (!isPrimary && match.isPrimaryUserSeenResult)) {
-      await this.matchRepo.delete({
-        id: matchId
-      });
+    if (
+      (isPrimary && match.isSecondaryUserSeenResult) ||
+      (!isPrimary && match.isPrimaryUserSeenResult)
+    ) {
+      await this.matchRepo.delete({ id: matchId });
       return match;
     }
 
-    await this.matchRepo.save(match);
-    return match;
+    return this.matchRepo.save(match);
   }
 
   private async setResult(matchResultDto: MatchResultDto) {
@@ -156,10 +203,6 @@ export class MatchService {
 
     const primaryUser = users[0];
     const secondaryUser = users[1];
-
-    // console.log(
-    //   `=====> after matchusers ${primaryUserId} - ${secondaryUserId} - ${users.length} ${primaryUser.id} - ${secondaryUser.id}`,
-    // );
 
     // Resolves ELO
     let elo: number = EloCalculator.calculate(
@@ -215,11 +258,11 @@ export class MatchService {
     );
 
     await Promise.all([
-      this.userService.updateResult(
+      this.userService.updateOnMatchResult(
         primaryUser.id,
         new UpdateUserResultDto(primaryUser.matchCount, primaryUser.elo),
       ),
-      this.userService.updateResult(
+      this.userService.updateOnMatchResult(
         secondaryUser.id,
         new UpdateUserResultDto(secondaryUser.matchCount, secondaryUser.elo),
       ),
@@ -243,6 +286,15 @@ export class MatchService {
   }
 
   findAllByUserId(uid: string) {
-    return this.matchRepo.find({ where: {} });
+    return this.matchRepo
+      .createQueryBuilder(`${MATCH_TBL_KEYS.tblName}`)
+      .where(
+        `${MATCH_TBL_KEYS.tblName}.${MATCH_TBL_KEYS.primaryUserId} = '${uid}'`,
+      )
+      .orWhere(
+        `${MATCH_TBL_KEYS.tblName}.${MATCH_TBL_KEYS.secondaryUserId} = '${uid}'`,
+      )
+      .orderBy(`${MATCH_TBL_KEYS.tblName}.${MATCH_TBL_KEYS.createdAt}`, 'ASC') // TODO: check this
+      .getMany();
   }
 }

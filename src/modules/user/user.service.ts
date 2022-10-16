@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CONSTS } from 'src/core/const/constants';
 import { randomInt } from 'src/core/utils/random';
 import { Repository } from 'typeorm';
+import { deprecate } from 'util';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserResultDto } from './dto/update-user-result.dto';
 import {
@@ -127,7 +128,7 @@ export class UserService {
     return user;
   }
 
-  updateResult(id: string, updateUserDto: UpdateUserResultDto) {
+  updateOnMatchResult(id: string, updateUserDto: UpdateUserResultDto) {
     return this.userRepo.update(
       {
         id: id,

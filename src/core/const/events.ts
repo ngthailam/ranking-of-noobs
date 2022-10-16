@@ -4,7 +4,16 @@ import { MatchResult } from 'src/modules/match/entities/match.entity';
 export const EVENTS_KEY = {
   makeMove: 'makeMove',
   matchResult: 'matchResult',
+  matchInitiated: 'matchInitiated', // When both user joined the match
 };
+
+export class MatchInitiatedEvent {
+  constructor(matchId: string) {
+    this.matchId = matchId;
+  }
+
+  matchId: string;
+}
 
 export class MakeMoveEvent {
   constructor(matchId: string, userId: string, move: ValidMove) {

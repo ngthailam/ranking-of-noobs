@@ -50,6 +50,7 @@ export class User {
   @Column({ name: USER_TBL_KEYS.elo, default: CONSTS.baseElo })
   elo: number;
 
+  // TODO: do I really need match count? it is in stats table anyways
   @Column({ name: USER_TBL_KEYS.matchCount, default: 0 })
   matchCount: number;
 

@@ -16,7 +16,6 @@ import {
 } from 'src/core/const/events';
 import { ValidMove } from '../match/dto/make-move.dto';
 import { MatchResult } from '../match/entities/match.entity';
-import { UserService } from '../user/user.service';
 import { StatsService } from '../stats/stats.service';
 
 @Injectable()
@@ -26,7 +25,6 @@ export class AchievementService {
     private readonly achiRepo: Repository<Achievement>,
     @InjectRepository(AchievementsUsers)
     private readonly achiUserRepo: Repository<AchievementsUsers>,
-    private readonly userService: UserService,
     private readonly statsService: StatsService,
   ) {}
 

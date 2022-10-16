@@ -14,17 +14,10 @@ import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseWrapperInterceptor } from './core/interceptors/response-wrapper.interceptor';
+import { WebSocketModule } from './modules/events/web-socket.module';
 
 @Module({
   imports: [
-    EventEmitterModule.forRoot(),
-    MatchModule,
-    UserModule,
-    MatchHistoryModule,
-    StatsModule,
-    TaskSchedulingModule,
-    AchievementModule,
-    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [],
       inject: [],
@@ -39,8 +32,17 @@ import { ResponseWrapperInterceptor } from './core/interceptors/response-wrapper
         synchronize: true,
       }),
     }),
+    EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
+    MatchModule,
+    UserModule,
+    MatchHistoryModule,
+    StatsModule,
+    TaskSchedulingModule,
+    AchievementModule,
     AuthModule,
     HealthModule,
+    WebSocketModule,
   ],
   controllers: [AppController],
   providers: [
