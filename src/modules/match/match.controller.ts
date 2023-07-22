@@ -11,10 +11,9 @@ import { CreateMatchRequest } from './dto/request/create-match.request';
 import { JwtAuthUser } from '../auth/jwt/jwt-extractor';
 import { User } from '../user/entities/user.entity';
 import { MakeMoveRequest } from './dto/request/make-move.request';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('match')
-
 @Controller('match')
 export class MatchController {
   constructor(
@@ -24,6 +23,7 @@ export class MatchController {
 
   @Post('')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   createMatch(
     @JwtAuthUser() user: User,
     @Body() createMatchRequest: CreateMatchRequest,
@@ -38,6 +38,7 @@ export class MatchController {
   @UseGuards(JwtAuthGuard)
   @Post('/make-move')
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
   makeMove(
     @JwtAuthUser() user: User,
     @Body() makeMoveRequest: MakeMoveRequest,
@@ -52,18 +53,21 @@ export class MatchController {
   @UseGuards(JwtAuthGuard)
   @Post('/seen-result/:matchId')
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
   setSeenResult(@JwtAuthUser() user: User, @Param('matchId') matchId: string) {
     return this.matchService.setSeenResult(user.id, matchId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
+  @ApiBearerAuth()
   getById(@Param('id') id: string) {
     return this.matchService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('user/ongoing')
+  @ApiBearerAuth()
   getByUserId(@JwtAuthUser() user: User) {
     const uid = user.id;
     return this.matchService.findAllByUserId(uid);

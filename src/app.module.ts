@@ -32,7 +32,7 @@ import { ResponseWrapperInterceptor } from './core/interceptors/response-wrapper
         type: 'postgres',
         host: 'localhost',
         port: 5432,
-        username: 'admin',
+        username: '',
         password: '',
         database: 'rankings_of_noobs',
         autoLoadEntities: true,

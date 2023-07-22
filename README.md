@@ -1,6 +1,11 @@
+## TODO:
+- Multiple players in 1 match
+- Tournament mode
+- Credit/ money on win / Wager
+- Non elo mode
+
 ## Description
 
-A Nest project
 An ELO system to put players in a game into ranks based on their performance
 
 ## TODO
